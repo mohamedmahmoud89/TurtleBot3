@@ -17,7 +17,7 @@ class OpenCrCommNode : public RosNodeBase{
         cout<<"Cmd = "<<msg.data<<endl;
     }
 public:
-    OpenCrCommNode():RosNodeBase(1), ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)){}
+    OpenCrCommNode():RosNodeBase(100), ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)){}
 
 private:
     Subscriber ctrlCmdDataSub;

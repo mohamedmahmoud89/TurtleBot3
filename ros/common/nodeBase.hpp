@@ -22,7 +22,7 @@ public:
 protected:
     NodeHandle n;
 private:
-    Rate rate;
+    Rate rate; // Hz
 };
 
 #endif
