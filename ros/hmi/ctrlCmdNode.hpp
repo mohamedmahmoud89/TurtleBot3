@@ -8,10 +8,6 @@
 using namespace std;
 
 class CtrlCmdNode : public RosNodeBase{
-    Publisher ctrlCmdPub;
-public:
-    CtrlCmdNode():RosNodeBase(10),ctrlCmdPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}
-
     void update() override{
         /**
          * This is a message object. You stuff it with data, and then publish it.
@@ -29,8 +25,13 @@ public:
          * given as a template parameter to the advertise<>() call, as was done
          * in the constructor above.
          */
-        ctrlCmdPub.publish(msg);
+        ctrlCmdDataPub.publish(msg);
     }
+public:
+    CtrlCmdNode():RosNodeBase(10),ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}
+
+private:
+    Publisher ctrlCmdDataPub;
 };
 
 #endif
