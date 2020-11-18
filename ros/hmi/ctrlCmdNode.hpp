@@ -13,19 +13,22 @@ class CtrlCmdNode : public RosNodeBase{
          * This is a message object. You stuff it with data, and then publish it.
          */
         std_msgs::String msg;
-
+        string cmd;
         cout<<"Enter Command:"<<endl;
-        cin>>msg.data;
+        
+        cin>>cmd;
+        if(cmd=="f")msg.data="fwd";
+        if(cmd=="b")msg.data="bwd";
+        if(cmd=="s")msg.data="stop";
+        if(cmd=="l")msg.data="left";
+        if(cmd=="r")msg.data="right";
+        if(cmd=="+")msg.data="up";
+        if(cmd=="-")msg.data="down";
 
-        ROS_INFO("%s", msg.data.c_str());
-
-        /**
-         * The publish() function is how you send messages. The parameter
-         * is the message object. The type of this object must agree with the type
-         * given as a template parameter to the advertise<>() call, as was done
-         * in the constructor above.
-         */
-        ctrlCmdDataPub.publish(msg);
+        if(msg.data.size()){
+            ROS_INFO("%s", msg.data.c_str());
+            ctrlCmdDataPub.publish(msg);
+        }
     }
 public:
     CtrlCmdNode():RosNodeBase(10),ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}

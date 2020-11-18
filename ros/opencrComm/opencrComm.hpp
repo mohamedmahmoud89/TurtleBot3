@@ -4,20 +4,40 @@
 #include "nodeBase.hpp"
 #include <std_msgs/String.h>
 #include<fstream>
+#include<string>
 
 using namespace std;
 
+#define FILE "/dev/ttyACM0"
+
 class OpenCrCommNode : public RosNodeBase{
-    void update() override{}
+    void update() override{
+        fstream fs;
+        string line;
+        fs.open(FILE);
+        if(fs.is_open()){
+                fs<<"query#"<<endl;
+                while(getline(fs,line)&&line!="over"){
+                        cout<<line<<endl;
+                }
+                fs.close();
+        }
+    }
     static void sendData(const std_msgs::String& msg){
         fstream fs;
-        fs.open("/dev/ttyACM0");
-        fs<<msg.data;
-        fs.close();
-        cout<<"Cmd = "<<msg.data<<endl;
+        string line;
+        fs.open(FILE);
+        if(fs.is_open()){
+                fs<<msg.data<<'#'<<endl;
+                while(getline(fs,line)&&line!="over")
+                        cout<<line<<endl;
+                fs.close();
+        }
     }
 public:
-    OpenCrCommNode():RosNodeBase(100), ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)){}
+    OpenCrCommNode():
+            RosNodeBase(20),
+            ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)){}
 
 private:
     Subscriber ctrlCmdDataSub;
