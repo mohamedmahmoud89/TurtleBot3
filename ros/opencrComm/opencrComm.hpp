@@ -4,7 +4,7 @@
 #include "nodeBase.hpp"
 #include "common.hpp"
 #include <std_msgs/String.h>
-#include <std_msgs/UInt8MultiArray.h>
+#include <std_msgs/UInt16MultiArray.h>
 #include<fstream>
 #include<string>
 
@@ -14,7 +14,7 @@ using namespace std;
 
 class OpenCrCommNode : public RosNodeBase{
     void update() override{
-        std_msgs::UInt8MultiArray msg;
+        std_msgs::UInt16MultiArray msg;
         std_msgs::MultiArrayDimension dim;
         fstream fs;
         string line;
@@ -28,9 +28,9 @@ class OpenCrCommNode : public RosNodeBase{
                 while(getline(fs,line)&&line!="over"){
                     cout<<line<<endl;
                     if(line.size()&&line[0]=='l')
-                        msg.data[0]=static_cast<u8>(line[2]);
+                        msg.data[0]=static_cast<u16>(line[2]);
                     else if(line.size()&&line[0]=='l')
-                        msg.data[1]=static_cast<u8>(line[2]);
+                        msg.data[1]=static_cast<u16>(line[2]);
                 }
                 fs.close();
         }
@@ -51,7 +51,7 @@ public:
     OpenCrCommNode():
             RosNodeBase(SystemCfg::rate_hz),
             ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)),
-            odomDataPub(n.advertise<std_msgs::UInt8MultiArray>("odom", 1000)){}
+            odomDataPub(n.advertise<std_msgs::UInt16MultiArray>("odom", 1000)){}
 
 private:
     Subscriber ctrlCmdDataSub;
