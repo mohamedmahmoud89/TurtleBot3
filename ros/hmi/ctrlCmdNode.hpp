@@ -2,6 +2,7 @@
 #define CTRL_CMD_NODE_HPP
 
 #include "nodeBase.hpp"
+#include "common.hpp"
 #include <std_msgs/String.h>
 #include <iostream>
 
@@ -31,7 +32,9 @@ class CtrlCmdNode : public RosNodeBase{
         }
     }
 public:
-    CtrlCmdNode():RosNodeBase(10),ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}
+    CtrlCmdNode():
+        RosNodeBase(SystemCfg::rate_hz),
+        ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}
 
 private:
     Publisher ctrlCmdDataPub;
