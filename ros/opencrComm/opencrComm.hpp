@@ -21,10 +21,10 @@ class OpenCrCommNode : public RosNodeBase{
                 while(getline(fs,line)&&line!="over"){
                     cout<<line<<endl;
                     msg.data=line;
+                    odomDataPub.publish(msg);
                 }
                 fs.close();
         }
-        odomDataPub.publish(msg);
     }
     static void sendData(const std_msgs::String& msg){
         fstream fs;
