@@ -43,6 +43,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(hmi_node ros/hmi/hmiMain.cpp)
 add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
+add_executable(odom_node ros/odom/odomMain.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -51,5 +52,9 @@ add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
  )
   target_link_libraries(
    opencr_node
+   ${catkin_LIBRARIES}
+ )
+  target_link_libraries(
+   odom_node
    ${catkin_LIBRARIES}
  )

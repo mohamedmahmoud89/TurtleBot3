@@ -12,16 +12,19 @@ using namespace std;
 
 class OpenCrCommNode : public RosNodeBase{
     void update() override{
+        std_msgs::String msg;
         fstream fs;
         string line;
         fs.open(FILE);
         if(fs.is_open()){
                 fs<<"query#"<<endl;
                 while(getline(fs,line)&&line!="over"){
-                        cout<<line<<endl;
+                    cout<<line<<endl;
+                    msg.data=line;
                 }
                 fs.close();
         }
+        odomDataPub.publish(msg);
     }
     static void sendData(const std_msgs::String& msg){
         fstream fs;
@@ -37,10 +40,12 @@ class OpenCrCommNode : public RosNodeBase{
 public:
     OpenCrCommNode():
             RosNodeBase(20),
-            ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)){}
+            ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)),
+            odomDataPub(n.advertise<std_msgs::String>("odom", 1000)){}
 
 private:
     Subscriber ctrlCmdDataSub;
+    Publisher odomDataPub;
 };
 
 #endif
