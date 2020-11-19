@@ -28,9 +28,9 @@ class OpenCrCommNode : public RosNodeBase{
                 while(getline(fs,line)&&line!="over"){
                     cout<<line<<endl;
                     if(line.size()&&line[0]=='l')
-                        msg.data[0]=static_cast<u16>(line[2]);
+                        msg.data.push_back(static_cast<u16>(line[2]));
                     else if(line.size()&&line[0]=='l')
-                        msg.data[1]=static_cast<u16>(line[2]);
+                        msg.data.push_back(static_cast<u16>(line[2]));
                 }
                 fs.close();
         }
