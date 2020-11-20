@@ -14,8 +14,9 @@ class OdomNode : public RosNodeBase{
     
     static void updatePos(const WheelVelocity& wheelVelocity){
         f32 num_revolutions_left = 
-            (static_cast<f32>(wheelVelocity.left_rpm))/(MIN_TO_SEC*SystemCfg::rate_hz);
-        drivenDistLeft += num_revolutions_left*RobotCfg::wheelDiameter_mm;
+            (static_cast<f32>(RobotCfg::rpmOffset*wheelVelocity.left_rpm))/(MIN_TO_SEC*SystemCfg::rate_hz);
+        f32 wheel_circumference=RobotCfg::wheelDiameter_mm*M_PI;
+        drivenDistLeft += num_revolutions_left*wheel_circumference;
     }  
     static void processData(const std_msgs::Int16MultiArray& msg){
         WheelVelocity vel;
