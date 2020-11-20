@@ -42,8 +42,7 @@ class OpenCrCommNode : public RosNodeBase{
         fs.open(FILE);
         if(fs.is_open()){
                 fs<<msg.data<<'#'<<endl;
-                while(getline(fs,line)&&line!="over")
-                        //cout<<line<<endl;
+                while(getline(fs,line)&&line!="over"){}
                 fs.close();
         }
     }
