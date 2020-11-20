@@ -23,8 +23,8 @@ public:
 
 class WheelVelocity{
 public:
-    u16 left_rpm;
-    u16 right_rpm;
+    si16 left_rpm;
+    si16 right_rpm;
 };
 
 #endif

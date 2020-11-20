@@ -3,7 +3,7 @@
 
 #include "nodeBase.hpp"
 #include "common.hpp"
-#include <std_msgs/UInt16MultiArray.h>
+#include <std_msgs/Int16MultiArray.h>
 
 using namespace std;
 
@@ -16,7 +16,7 @@ class OdomNode : public RosNodeBase{
         f32 num_revolutions_left = (wheelVelocity.left_rpm)/(MIN_TO_SEC*SystemCfg::rate_hz);
         drivenDistLeft += num_revolutions_left*RobotCfg::wheelDiameter_mm;
     }  
-    static void processData(const std_msgs::UInt16MultiArray& msg){
+    static void processData(const std_msgs::Int16MultiArray& msg){
         WheelVelocity vel;
         vel.left_rpm=msg.data[0];
         vel.left_rpm=msg.data[1];
