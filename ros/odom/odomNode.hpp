@@ -13,17 +13,18 @@ class OdomNode : public RosNodeBase{
     void update() override{}
     
     static void updatePos(const WheelVelocity& wheelVelocity){
-        f32 num_revolutions_left = (wheelVelocity.left_rpm)/(MIN_TO_SEC*SystemCfg::rate_hz);
+        f32 num_revolutions_left = 
+            (static_cast<f32>(wheelVelocity.left_rpm))/(MIN_TO_SEC*SystemCfg::rate_hz);
         drivenDistLeft += num_revolutions_left*RobotCfg::wheelDiameter_mm;
     }  
     static void processData(const std_msgs::Int16MultiArray& msg){
         WheelVelocity vel;
         vel.left_rpm=msg.data[0];
-        vel.left_rpm=msg.data[1];
+        vel.right_rpm=msg.data[1];
         updatePos(vel);
-        cout<<"left="<<vel.left_rpm<<endl;
-        cout<<"right="<<vel.right_rpm<<endl;
-        cout<<drivenDistLeft<<endl;
+        //cout<<"left="<<vel.left_rpm<<endl;
+        //cout<<"right="<<vel.right_rpm<<endl;
+        cout<<"dd="<<drivenDistLeft<<endl;
     }
 public:
     OdomNode(): 
@@ -31,9 +32,9 @@ public:
         odomDataSub(n.subscribe("odom",100,processData)){}
 private:
     Subscriber odomDataSub;
-    static u32 drivenDistLeft;
+    static f32 drivenDistLeft;
 };
 
-u32 OdomNode::drivenDistLeft=0;
+f32 OdomNode::drivenDistLeft=0;
 
 #endif
