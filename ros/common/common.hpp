@@ -1,6 +1,8 @@
 #ifndef COMMON_TYPES_HPP
 #define COMMON_TYPES_HPP
 
+#include <mutex>
+
 using u16 = unsigned int;
 using u32 = unsigned long;
 
@@ -37,8 +39,16 @@ public:
 };
 
 class AngConversions{
+public:
     static constexpr f32 degToRad{0.01745329251};
     static constexpr f32 radToDegree{57.2957795131};
+};
+
+class Lock{
+    std::mutex& m;
+public:
+    Lock(std::mutex& ref):m(ref){m.lock();}
+    ~Lock(){m.unlock();}
 };
 
 #endif
