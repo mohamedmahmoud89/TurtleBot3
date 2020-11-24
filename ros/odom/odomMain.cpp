@@ -2,7 +2,7 @@
 
 int main(int argc,char** argv)
 {
-    ros::init(argc,argv,"odom");
+    ros::init(argc,argv,"OdomNode");
 
     OdomNode node;
     node.run();
