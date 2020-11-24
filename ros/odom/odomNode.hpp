@@ -105,7 +105,7 @@ private:
     static mutex posLock;
 };
 
-RobotPos OdomNode::robotPos;
+RobotPos OdomNode::robotPos(0,0,M_PI_2);
 mutex OdomNode::posLock;
 
 #endif

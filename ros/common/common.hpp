@@ -33,6 +33,10 @@ public:
 
 class RobotPos{
 public:
+    RobotPos(const f64& x,const f64& y,const f64& theta):
+        x_mm(x),
+        y_mm(y),
+        theta_rad(theta){}
     f64 x_mm{0};
     f64 y_mm{0};
     f64 theta_rad{0};
