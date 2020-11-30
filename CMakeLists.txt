@@ -26,6 +26,7 @@ include_directories(
   ros/common
   ros/hmi
   ros/opencrComm
+  ros/ldsd
 )
 
 ## Declare a C++ library
@@ -44,6 +45,7 @@ include_directories(
 add_executable(hmi_node ros/hmi/hmiMain.cpp)
 add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
 add_executable(odom_node ros/odom/odomMain.cpp)
+add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -56,5 +58,9 @@ add_executable(odom_node ros/odom/odomMain.cpp)
  )
   target_link_libraries(
    odom_node
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(
+   lds_node
    ${catkin_LIBRARIES}
  )
