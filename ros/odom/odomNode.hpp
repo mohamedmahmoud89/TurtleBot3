@@ -2,7 +2,6 @@
 #define ODOM_NODE_HPP
 
 #include "nodeBase.hpp"
-#include "common.hpp"
 #include <std_msgs/Int16MultiArray.h>
 #include <geometry_msgs/Pose2D.h>
 
@@ -95,7 +94,7 @@ class OdomNode : public RosNodeBase{
     }
 public:
     OdomNode(): 
-        RosNodeBase(SystemCfg::rate_hz),
+        RosNodeBase(),
         odomDataSub(n.subscribe("odom",100,processData)),
         posDataPub(n.advertise<geometry_msgs::Pose2D>("robotPos",1000)){}
 private:

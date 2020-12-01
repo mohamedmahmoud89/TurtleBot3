@@ -2,7 +2,6 @@
 #define OPENCR_COMM_NODE_HPP
 
 #include "nodeBase.hpp"
-#include "common.hpp"
 #include <std_msgs/String.h>
 #include <std_msgs/Int16MultiArray.h>
 #include<fstream>
@@ -62,7 +61,7 @@ class OpenCrCommNode : public RosNodeBase{
     }
 public:
     OpenCrCommNode():
-            RosNodeBase(SystemCfg::rate_hz),
+            RosNodeBase(),
             ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)),
             odomDataPub(n.advertise<std_msgs::Int16MultiArray>("odom", 1000)){}
 

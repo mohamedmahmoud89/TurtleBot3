@@ -98,8 +98,10 @@ void LFCDLaser::poll(sensor_msgs::LaserScan& scan)
           uint16_t intensity = (byte1 << 8) + byte0;
           uint16_t range     = (byte3 << 8) + byte2;
 
-          scan.ranges[359 - index - degree_count_num] = range / 1000.0;
-          scan.intensities[359 - index - degree_count_num] = intensity;
+          uint16_t idx = ((269 - index - degree_count_num) + 359)%359; // idx=0 correspond to robot pos theta=0
+
+          scan.ranges[idx] = range;
+          scan.intensities[idx] = intensity;
 
           degree_count_num++;
         }      

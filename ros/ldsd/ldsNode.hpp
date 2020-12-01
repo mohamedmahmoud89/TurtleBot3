@@ -3,7 +3,6 @@
 
 #include "ldsDriver.hpp"
 #include "nodeBase.hpp"
-#include "common.hpp"
 
 #define USB_PORT "/dev/ttyUSB0"
 
@@ -17,17 +16,17 @@ class LdsNode : public RosNodeBase{
 
 public:
     LdsNode():
-        RosNodeBase(SystemCfg::rate_hz),
+        RosNodeBase(RosNodeBaseType::NON_SPINNING),
         io(),
         ldsScan(),
         ldsDriver(USB_PORT,baudRate,io),
-        ldsPub(n.advertise<sensor_msgs::LaserScan>("LdsMeas",1000)){
+        ldsPub(n.advertise<sensor_msgs::LaserScan>("ldsMeas",1000)){
             ldsScan.header.frame_id = "laser";
             ldsScan.angle_increment = (2.0*M_PI/360.0);
             ldsScan.angle_min = 0.0;
             ldsScan.angle_max = 2.0*M_PI-ldsScan.angle_increment;
-            ldsScan.range_min = 0.12;
-            ldsScan.range_max = 3.5;
+            ldsScan.range_min = 12;
+            ldsScan.range_max = 3500;
             ldsScan.ranges.resize(360);
             ldsScan.intensities.resize(360);
         };
