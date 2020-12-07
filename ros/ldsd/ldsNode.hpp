@@ -20,13 +20,13 @@ public:
         io(),
         ldsScan(),
         ldsDriver(USB_PORT,baudRate,io),
-        ldsPub(n.advertise<sensor_msgs::LaserScan>("ldsMeas",1000)){
+        ldsPub(n.advertise<sensor_msgs::LaserScan>("ldsScan",1000)){
             ldsScan.header.frame_id = "laser";
             ldsScan.angle_increment = (2.0*M_PI/360.0);
             ldsScan.angle_min = 0.0;
             ldsScan.angle_max = 2.0*M_PI-ldsScan.angle_increment;
-            ldsScan.range_min = 12;
-            ldsScan.range_max = 3500;
+            ldsScan.range_min = LdsSensorCfg::minDepth_mm;
+            ldsScan.range_max = LdsSensorCfg::maxDepth_mm;
             ldsScan.ranges.resize(360);
             ldsScan.intensities.resize(360);
         };
