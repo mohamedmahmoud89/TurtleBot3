@@ -49,6 +49,29 @@ struct AngConversions{
     static constexpr f32 radToDegree{57.2957795131};
 };
 
+struct Point2D{
+    Point2D():x_mm(0),y_mm(0){}
+    Point2D(f32 x,f32 y):x_mm(x),y_mm(y){}
+    Point2D(const Point2D& p):x_mm(p.x_mm),y_mm(p.y_mm){}
+    f32 x_mm{0};
+    f32 y_mm{0};
+};
+
+struct Point2DPolar{
+    Point2DPolar():r_mm(0),theta_rad(0){}
+    Point2DPolar(f32 r,f32 theta):r_mm(r),theta_rad(theta){}
+    Point2DPolar(const Point2DPolar& p):r_mm(p.r_mm),theta_rad(p.theta_rad){}
+    f32 r_mm{0};
+    f32 theta_rad{0};
+};
+
+struct Line2D{
+    Line2D():p1(),p2(){}
+    Line2D(const Point2D& point_1,const Point2D& point_2):p1(point_1),p2(point_2){}
+    Point2D p1;
+    Point2D p2;
+};
+
 class Lock{
     std::mutex& m;
 public:
