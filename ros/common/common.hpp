@@ -72,6 +72,12 @@ struct Line2D{
     Point2D p2;
 };
 
+struct Line2DPolar{
+    Point2DPolar center;
+    f32 start_ang_rad{0};
+    f32 end_ang_rad{0};
+};
+
 class Lock{
     std::mutex& m;
 public:

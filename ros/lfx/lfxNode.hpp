@@ -50,7 +50,7 @@ class LfxNode : public RosNodeBase{
             vector<geometry_msgs::Pose>& feats){
         LfxFeats lfx_feats;
         vector<Point2DPolar> valid_scan;
-        vector<Point2DPolar> line_params;
+        vector<Line2DPolar> line_params;
 
         // create points out of the scan
         for(u16 idx=0;idx<scan.size();idx++){
@@ -66,11 +66,19 @@ class LfxNode : public RosNodeBase{
         segmentScan(valid_scan,line_params);
         for(u16 i=0;i<line_params.size();++i){
             auto line_param=line_params[i];
+            f32 r=line_param.center.r_mm;
+            f32 theta=line_param.center.theta_rad;
             Line2D l;
-            l.p1.x_mm=pos.x_mm;
-            l.p1.y_mm=pos.y_mm;
-            l.p2.x_mm=line_param.r_mm*cos(line_param.theta_rad);
-            l.p2.y_mm=line_param.r_mm*sin(line_param.theta_rad);
+            f32 d_start=r*tan(theta-line_param.start_ang_rad);
+            f32 d_end  =r*tan(line_param.end_ang_rad-theta);
+            f32 ang_start= theta-M_PI_2;
+            f32 ang_end= theta+M_PI_2;
+            f32 center_x=pos.x_mm+r*cos(theta);
+            f32 center_y=pos.y_mm+r*sin(theta);
+            l.p1.x_mm=center_x+d_start*cos(ang_start);
+            l.p1.y_mm=center_y+d_start*sin(ang_start);
+            l.p2.x_mm=center_x+d_end*cos(ang_end);
+            l.p2.y_mm=center_y+d_end*sin(ang_end);
             lfx_feats.lines.push_back(l);
         }
         
@@ -79,11 +87,11 @@ class LfxNode : public RosNodeBase{
 
     void segmentScan(
             const vector<Point2DPolar>& scan_segment,
-            vector<Point2DPolar>& line_params){
+            vector<Line2DPolar>& line_params){
         u16 split_idx=0;
         f32 max_norm_dist=0;
         bool is_fitting_ok=false;
-        Point2DPolar temp_line_param;
+        Line2DPolar temp_line_param;
 
         if(scan_segment.empty())
             return;
@@ -107,7 +115,7 @@ class LfxNode : public RosNodeBase{
 
     void fitLineLeastSquares(
             const vector<Point2DPolar>& scan,
-            Point2DPolar& line_params,
+            Line2DPolar& line_params,
             f32& max_norm_dist,
             u16& max_norm_dist_idx){
         f64 first=0,second=0,third=0,fourth=0,sig=0;
@@ -125,17 +133,20 @@ class LfxNode : public RosNodeBase{
                 }
             }
 
-            line_params.theta_rad=0.5*atan2((second*2.0/M)-first,(fourth/M)-third);
+            line_params.center.theta_rad=0.5*atan2((second*2.0/M)-first,(fourth/M)-third);
 
             for(u16 i=0;i<M;++i){
-                sig+=scan[i].r_mm*cos(scan[i].theta_rad-line_params.theta_rad);
+                sig+=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad);
             }
 
-            line_params.r_mm=sig/M;
-            line_params.r_mm>0?line_params.r_mm-=20:line_params.r_mm+=20;
+            line_params.center.r_mm=sig/M;
+            line_params.center.r_mm>0?line_params.center.r_mm-=line_fitting_offset:line_params.center.r_mm+=line_fitting_offset;
+
+            line_params.start_ang_rad=scan[0].theta_rad;
+            line_params.end_ang_rad=scan[M-1].theta_rad;
 
             for(u16 i=0;i<M;++i){
-                f32 norm_dist=scan[i].r_mm*cos(scan[i].theta_rad-line_params.theta_rad) - line_params.r_mm;
+                f32 norm_dist=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad) - line_params.center.r_mm;
                 if(fabs(norm_dist)>max_norm_dist){
                     max_norm_dist=fabs(norm_dist);
                     max_norm_dist_idx=i;
@@ -238,7 +249,8 @@ private:
     static vector<u16> scan; 
     static mutex posMux;
     static mutex scanMux;
-    static const u16 normal_dist_threshold_mm=50;
+    static const u16 normal_dist_threshold_mm=25;
+    static const u16 line_fitting_offset=20;
 };
 
 RobotPos LfxNode::pos(0,0,M_PI_2);
