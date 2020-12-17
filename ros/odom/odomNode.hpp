@@ -65,7 +65,7 @@ class OdomNode : public RosNodeBase{
                 f32 c_x(robotPos.x_mm-(radius*sin(robotPos.theta_rad)));
                 f32 c_y(robotPos.y_mm+(radius*cos(robotPos.theta_rad)));
                 robotPos.theta_rad+=alpha_rad;
-                robotPos.theta_rad=fmod(robotPos.theta_rad,2*M_PI);
+                robotPos.theta_rad=fmod(robotPos.theta_rad+(2*M_PI),2*M_PI);
                 robotPos.x_mm = c_x + radius*sin(robotPos.theta_rad);
                 robotPos.y_mm = c_y - radius*cos(robotPos.theta_rad);
             }
@@ -82,7 +82,7 @@ class OdomNode : public RosNodeBase{
             f32 c_x(robotPos.x_mm+(radius*sin(robotPos.theta_rad)));
             f32 c_y(robotPos.y_mm-(radius*cos(robotPos.theta_rad)));
             robotPos.theta_rad-=alpha_rad;
-            robotPos.theta_rad=fmod(robotPos.theta_rad,2*M_PI);
+            robotPos.theta_rad=fmod(robotPos.theta_rad+(2*M_PI),2*M_PI);
             robotPos.x_mm = c_x - radius*sin(robotPos.theta_rad);
             robotPos.y_mm = c_y + radius*cos(robotPos.theta_rad);
         }

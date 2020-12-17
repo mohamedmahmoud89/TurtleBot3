@@ -70,6 +70,7 @@ struct Line2D{
     Line2D(const Point2D& point_1,const Point2D& point_2):p1(point_1),p2(point_2){}
     Point2D p1;
     Point2D p2;
+    f32 angle;
 };
 
 struct Line2DPolar{
