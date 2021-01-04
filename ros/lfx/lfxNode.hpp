@@ -65,6 +65,7 @@ class LfxNode : public RosNodeBase{
         }
 
         // extract lines
+        //segmentScan(valid_scan,0,scan.size()-1,line_params);
         segmentScan(valid_scan,line_params);
         for(u16 i=0;i<line_params.size();++i){
             constructLineFeat(line_params[i],lfx_feats);
@@ -124,7 +125,7 @@ class LfxNode : public RosNodeBase{
         bool is_fitting_ok=false;
         Line2DPolar temp_line_param;
 
-        if(scan_segment.empty())
+        if(scan_segment.size()<2)
             return;
         
         fitLineLeastSquares(scan_segment,temp_line_param,max_norm_dist,split_idx); 
@@ -143,6 +144,37 @@ class LfxNode : public RosNodeBase{
 
         line_params.push_back(temp_line_param);
     }
+
+    /*void segmentScan(
+            const vector<Point2DPolar>& scan_segment,
+            u16 start_idx,
+            u16 end_idx,
+            vector<Line2DPolar>& line_params){
+        u16 split_idx=0;
+        f32 max_norm_dist=0;
+        bool is_fitting_ok=false;
+        Line2DPolar temp_line_param;
+
+        if(end_idx-start_idx<2)
+            return;
+        
+        vector<Point2DPolar> seg;
+        seg.insert(seg.end(),scan_segment.begin()+start_idx,scan_segment.begin()+end_idx);
+        fitLineLeastSquares(seg,temp_line_param,max_norm_dist,split_idx); 
+        split_idx+=start_idx;
+
+        if(max_norm_dist>normal_dist_threshold_mm){
+            cout<<"split at="<<split_idx<<endl;
+            // split at slpit_idx and call segmentScan() twice 
+            segmentScan(scan_segment,start_idx,split_idx,line_params);
+            segmentScan(scan_segment,split_idx,end_idx,line_params);
+            return;
+        }
+
+        line_params.push_back(temp_line_param);
+        cout<<"line start="<<temp_line_param.start_ang_rad*AngConversions::radToDegree<<endl;
+        cout<<"line end="<<temp_line_param.end_ang_rad*AngConversions::radToDegree<<endl;
+    }*/
 
     void fitLineLeastSquares(
             const vector<Point2DPolar>& scan,
@@ -181,10 +213,15 @@ class LfxNode : public RosNodeBase{
             line_params.start_ang_rad=scan[0].theta_rad;
             line_params.end_ang_rad=scan[M-1].theta_rad;
 
+            vector<f32> norm_dist(M,0);
             for(u16 i=0;i<M;++i){
-                f32 norm_dist=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad) - line_params.center.r_mm;
-                if(fabs(norm_dist)>max_norm_dist){
-                    max_norm_dist=fabs(norm_dist);
+                norm_dist[i]=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad);
+                norm_dist[i]=fabs(fabs(norm_dist[i])-line_params.center.r_mm);
+            }
+
+            for(u16 i=1;i<M-1;++i){
+                if(norm_dist[i]>=norm_dist[i-1]&&norm_dist[i]>=norm_dist[i+1]&&norm_dist[i]>max_norm_dist){
+                    max_norm_dist=norm_dist[i];
                     max_norm_dist_idx=i;
                 }
             }
