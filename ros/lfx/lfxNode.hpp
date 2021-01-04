@@ -64,9 +64,11 @@ class LfxNode : public RosNodeBase{
             }
         }
 
+        if(valid_scan.empty())
+            return;
+
         // extract lines
-        //segmentScan(valid_scan,0,scan.size()-1,line_params);
-        segmentScan(valid_scan,line_params);
+        segmentScan(valid_scan,0,valid_scan.size()-1,line_params);
         for(u16 i=0;i<line_params.size();++i){
             constructLineFeat(line_params[i],lfx_feats);
         }
@@ -119,36 +121,8 @@ class LfxNode : public RosNodeBase{
 
     void segmentScan(
             const vector<Point2DPolar>& scan_segment,
-            vector<Line2DPolar>& line_params){
-        u16 split_idx=0;
-        f32 max_norm_dist=0;
-        bool is_fitting_ok=false;
-        Line2DPolar temp_line_param;
-
-        if(scan_segment.size()<2)
-            return;
-        
-        fitLineLeastSquares(scan_segment,temp_line_param,max_norm_dist,split_idx); 
-
-        if(max_norm_dist>normal_dist_threshold_mm){
-            // split at slpit_idx and call segmentScan() twice 
-            vector<Point2DPolar> seg_1;
-            vector<Point2DPolar> seg_2;
-
-            seg_1.insert(seg_1.end(),scan_segment.begin(),scan_segment.begin()+split_idx);
-            seg_2.insert(seg_2.end(),scan_segment.begin()+split_idx+1,scan_segment.end());
-            segmentScan(seg_1,line_params);
-            segmentScan(seg_2,line_params);
-            return;
-        }
-
-        line_params.push_back(temp_line_param);
-    }
-
-    /*void segmentScan(
-            const vector<Point2DPolar>& scan_segment,
-            u16 start_idx,
-            u16 end_idx,
+            const u16 start_idx,
+            const u16 end_idx,
             vector<Line2DPolar>& line_params){
         u16 split_idx=0;
         f32 max_norm_dist=0;
@@ -157,40 +131,36 @@ class LfxNode : public RosNodeBase{
 
         if(end_idx-start_idx<2)
             return;
-        
-        vector<Point2DPolar> seg;
-        seg.insert(seg.end(),scan_segment.begin()+start_idx,scan_segment.begin()+end_idx);
-        fitLineLeastSquares(seg,temp_line_param,max_norm_dist,split_idx); 
-        split_idx+=start_idx;
+
+        fitLineLeastSquares(scan_segment,start_idx,end_idx,temp_line_param,max_norm_dist,split_idx); 
 
         if(max_norm_dist>normal_dist_threshold_mm){
-            cout<<"split at="<<split_idx<<endl;
             // split at slpit_idx and call segmentScan() twice 
             segmentScan(scan_segment,start_idx,split_idx,line_params);
-            segmentScan(scan_segment,split_idx,end_idx,line_params);
+            segmentScan(scan_segment,split_idx+1,end_idx,line_params);
             return;
         }
 
         line_params.push_back(temp_line_param);
-        cout<<"line start="<<temp_line_param.start_ang_rad*AngConversions::radToDegree<<endl;
-        cout<<"line end="<<temp_line_param.end_ang_rad*AngConversions::radToDegree<<endl;
-    }*/
+    }
 
     void fitLineLeastSquares(
             const vector<Point2DPolar>& scan,
+            const u16 start_idx,
+            const u16 end_idx,
             Line2DPolar& line_params,
             f32& max_norm_dist,
             u16& max_norm_dist_idx){
         f64 first=0,second=0,third=0,fourth=0,sig=0;
-        u16 M=scan.size();
+        u16 M=end_idx-start_idx+1;
         
         if(M){
-            for(u16 i=0;i<M;++i){
+            for(u16 i=start_idx;i<=end_idx;++i){
                 f64 p=pow(scan[i].r_mm,2);
                 first+=(p*sin(2*scan[i].theta_rad));
                 third+=(p*cos(2*scan[i].theta_rad));
 
-                for(u16 j=0;j<M;++j){
+                for(u16 j=start_idx;j<=end_idx;++j){
                     second+=(scan[i].r_mm*scan[j].r_mm*cos(scan[i].theta_rad)*sin(scan[j].theta_rad));
                     fourth+=(scan[i].r_mm*scan[j].r_mm*cos(scan[i].theta_rad+scan[j].theta_rad));
                 }
@@ -198,7 +168,7 @@ class LfxNode : public RosNodeBase{
 
             line_params.center.theta_rad=0.5*atan2((second*2.0/M)-first,(fourth/M)-third);
 
-            for(u16 i=0;i<M;++i){
+            for(u16 i=start_idx;i<=end_idx;++i){
                 sig+=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad);
             }
 
@@ -210,19 +180,19 @@ class LfxNode : public RosNodeBase{
             line_params.center.r_mm=fabs(line_params.center.r_mm)-LdsSensorCfg::sensorOffset_mm;
             line_params.center.theta_rad=fmod(line_params.center.theta_rad+(2*M_PI),2*M_PI);
 
-            line_params.start_ang_rad=scan[0].theta_rad;
-            line_params.end_ang_rad=scan[M-1].theta_rad;
+            line_params.start_ang_rad=scan[start_idx].theta_rad;
+            line_params.end_ang_rad=scan[end_idx].theta_rad;
 
             vector<f32> norm_dist(M,0);
-            for(u16 i=0;i<M;++i){
-                norm_dist[i]=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad);
-                norm_dist[i]=fabs(fabs(norm_dist[i])-line_params.center.r_mm);
+            for(u16 i=start_idx;i<=end_idx;++i){
+                norm_dist[i-start_idx]=scan[i].r_mm*cos(scan[i].theta_rad-line_params.center.theta_rad);
+                norm_dist[i-start_idx]=fabs(fabs(norm_dist[i-start_idx])-line_params.center.r_mm);
             }
 
             for(u16 i=1;i<M-1;++i){
                 if(norm_dist[i]>=norm_dist[i-1]&&norm_dist[i]>=norm_dist[i+1]&&norm_dist[i]>max_norm_dist){
                     max_norm_dist=norm_dist[i];
-                    max_norm_dist_idx=i;
+                    max_norm_dist_idx=i+start_idx;
                 }
             }
         }
