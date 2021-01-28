@@ -26,7 +26,10 @@ include_directories(
   ros/common
   ros/hmi
   ros/opencrComm
+  ros/odom
   ros/ldsd
+  core/common
+  core/odom
 )
 
 ## Declare a C++ library
@@ -47,6 +50,7 @@ add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
 add_executable(odom_node ros/odom/odomMain.cpp)
 add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
 add_executable(lfx_node ros/lfx/lfxMain.cpp)
+add_executable(maze_node ros/mazeRunner/mrMain.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -67,5 +71,9 @@ add_executable(lfx_node ros/lfx/lfxMain.cpp)
  )
  target_link_libraries(
    lfx_node
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(
+   maze_node
    ${catkin_LIBRARIES}
  )
