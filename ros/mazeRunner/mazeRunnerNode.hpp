@@ -142,7 +142,6 @@ class MazeRunnerNode : public RosNodeBase{
     }
     
     void exec(){
-        odom.exec();
         lfx.exec();
     }
 
@@ -151,34 +150,28 @@ class MazeRunnerNode : public RosNodeBase{
 
         // set inputs
         {
-            Lock lock(wheelDataMux);
-            odomInData.wheelVel=wheelData;
+            Lock lock(posMux);
+            lfxInData.pos=pos;
         }
         {
             Lock lock(scanMux);
             lfxInData.scan=scanData;
         }
-        // TODO: refactor the duplicate instances and too many copies 
-        lfxInData.pos=odomOutData.robotPos;
 
         // execute
         exec();
 
         // send outputs
-        msg.x=odomOutData.robotPos.x_mm;
-        msg.y=odomOutData.robotPos.y_mm;
-        msg.theta=odomOutData.robotPos.theta_rad;
-        posDataPub.publish(msg);
-        cout<<"pos = "<<msg.x<<" , "<<msg.y<<" , "<<msg.theta*AngConversions::radToDegree<<endl;
-
-        // display feats
         displayFeats(lfxOutData.feats,lfxInData.pos);
+        
+        //featPub.publish(msg);
     }
      
-    static void storePos(const std_msgs::Int16MultiArray& msg){
-        Lock lock(wheelDataMux);
-        wheelData.left_rpm=msg.data[0];
-        wheelData.right_rpm=msg.data[1];
+    static void storePos(const geometry_msgs::Pose2D& msg){
+        Lock mux(posMux);
+        pos.x_mm = msg.x;
+        pos.y_mm = msg.y;
+        pos.theta_rad =msg.theta;
     }
 
     static void storeScan(const sensor_msgs::LaserScan& msg){
@@ -190,9 +183,8 @@ class MazeRunnerNode : public RosNodeBase{
 public:
     MazeRunnerNode(): 
         RosNodeBase(),
-        odom(odomInData,odomOutData),
         lfx(lfxInData,lfxOutData),
-        odomDataSub(n.subscribe("odom",100,storePos)),
+        robotPosSub(n.subscribe("robotPos",100,storePos)),
         ldsScanSub(n.subscribe("ldsScan",100,storeScan)),
         posDataPub(n.advertise<geometry_msgs::Pose2D>("robotPos",1000)),
         rvizPointsPub(n.advertise<visualization_msgs::Marker>("rvizPoints", 1000)),
@@ -202,7 +194,7 @@ public:
         rvizPosArrPub(n.advertise<geometry_msgs::PoseArray>("rvizLinesVectors", 1000)),
         rvizPosPub(n.advertise<geometry_msgs::PoseStamped>("rvizPos", 1000)){}
 private:
-    Subscriber odomDataSub;
+    Subscriber robotPosSub;
     Subscriber ldsScanSub;
     Publisher posDataPub;
     Publisher rvizPointsPub;
@@ -211,21 +203,18 @@ private:
     Publisher rvizEdgesPub;
     Publisher rvizPosPub;
     Publisher rvizPosArrPub;
-    OdomInputData odomInData;
-    OdomOutputData odomOutData;
-    OdomFunc odom;
     LfxInputData lfxInData;
     LfxOutputData lfxOutData;
     LfxFunc lfx;
-    static mutex wheelDataMux;
+    static mutex posMux;
     static mutex scanMux;
-    static WheelVelocity wheelData;
+    static RobotPos pos;
     static vector<u16> scanData;
 };
 
-mutex MazeRunnerNode::wheelDataMux;
+mutex MazeRunnerNode::posMux;
 mutex MazeRunnerNode::scanMux;
-WheelVelocity MazeRunnerNode::wheelData(0,0);
+RobotPos MazeRunnerNode::pos(0,0,M_PI_2);
 vector<u16> MazeRunnerNode::scanData(360,0);
 
 #endif
