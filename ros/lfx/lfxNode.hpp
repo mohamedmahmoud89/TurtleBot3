@@ -16,13 +16,6 @@ enum LfxFeatType{
     EDGE
 };
 
-struct LfxFeats{
-    vector<Point2D> points;
-    vector<Line2D> lines;
-    vector<Point2D> corners;
-    vector<Point2D> edges;
-};
-
 class LfxNode : public RosNodeBase{
     void update() override{
         RobotPos loc_pos(0,0,0);

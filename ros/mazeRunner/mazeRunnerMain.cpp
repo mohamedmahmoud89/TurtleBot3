@@ -1,4 +1,4 @@
-#include "mrNode.hpp"
+#include "mazeRunnerNode.hpp"
 
 int main(int argc,char** argv)
 {

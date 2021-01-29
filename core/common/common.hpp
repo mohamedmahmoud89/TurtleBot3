@@ -2,6 +2,9 @@
 #define COMMON_TYPES_HPP
 
 #include <mutex>
+#include <vector>
+
+using namespace std;
 
 using u16 = unsigned int;
 using u32 = unsigned long;
@@ -79,10 +82,18 @@ struct Line2DPolar{
     f32 end_ang_rad{0};
 };
 
+
+struct LfxFeats{
+    vector<Point2D> points;
+    vector<Line2D> lines;
+    vector<Point2D> corners;
+    vector<Point2D> edges;
+};
+
 class Lock{
-    std::mutex& m;
+    mutex& m;
 public:
-    Lock(std::mutex& ref):m(ref){m.lock();}
+    Lock(mutex& ref):m(ref){m.lock();}
     ~Lock(){m.unlock();}
 };
 
