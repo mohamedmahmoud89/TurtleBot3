@@ -137,7 +137,7 @@ class LfxNode : public RosNodeBase{
         line_params.push_back(temp_line_param);
     }
 
-    void fitLineLeastSquares(
+    inline void fitLineLeastSquares(
             const vector<Point2DPolar>& scan,
             const u16 start_idx,
             const u16 end_idx,

@@ -27,7 +27,7 @@ struct SystemCfg{
 
 struct LdsSensorCfg{
     static const u16 minDepth_mm{120};
-    static const u16 maxDepth_mm{3500};
+    static const u16 maxDepth_mm{800};
     static const u16 sensorOffset_mm{20};
 };
 
