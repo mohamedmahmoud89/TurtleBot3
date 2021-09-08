@@ -9,8 +9,9 @@
 class LdsNode : public RosNodeBase{
     void update() override{
         sensor_msgs::LaserScan latest;
+        ldsDriver.poll(ldsScan);
         {
-            Lock l(scanLock);
+            //Lock l(scanLock);
             latest=ldsScan;
         }
 
@@ -37,7 +38,7 @@ public:
         };
 
         void poll(){
-            ldsDriver.poll(ldsScan,scanLock);
+            //ldsDriver.poll(ldsScan);
         }
 private:
     static const u32 baudRate{230400};

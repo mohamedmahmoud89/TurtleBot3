@@ -57,7 +57,7 @@ LFCDLaser::~LFCDLaser()
 // It doesn't transmit whole 360 degrees of data. 
 // The improved code below transfers data at a faster rate than the previous one, 
 // but it is updated with only 6 degrees data. The bandwidth also increases 60 times. (15KB/s > 900KB/s)
-void LFCDLaser::poll(sensor_msgs::LaserScan& scan,mutex& scanLock)
+void LFCDLaser::poll(sensor_msgs::LaserScan& scan)
 {
   uint8_t temp_char;
   bool got_scan = false;
@@ -100,16 +100,13 @@ void LFCDLaser::poll(sensor_msgs::LaserScan& scan,mutex& scanLock)
 
           uint16_t idx = ((269 - index - degree_count_num) + 359)%359; // idx=0 correspond to robot pos theta=0
 
-          {
-            Lock l(scanLock);
-            scan.ranges[idx] = range;
-          }
-          //scan.intensities[idx] = intensity;
+          scan.ranges[idx] = range;
+          scan.intensities[idx] = intensity;
 
           degree_count_num++;
         }      
 
-        //scan.time_increment = motor_speed/good_sets/1e8;
+        scan.time_increment = motor_speed/good_sets/1e8;
       }
     }
   }
