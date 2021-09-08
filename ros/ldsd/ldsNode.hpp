@@ -5,7 +5,6 @@
 #include "nodeBase.hpp"
 
 #define USB_PORT "/dev/ttyUSB0"
-#define LDS_NODE_RATE 1
 
 class LdsNode : public RosNodeBase{
     void update() override{
@@ -22,7 +21,7 @@ class LdsNode : public RosNodeBase{
 
 public:
     LdsNode():
-        RosNodeBase(RosNodeBaseType::NON_SPINNING,LDS_NODE_RATE),
+        RosNodeBase(RosNodeBaseType::NON_SPINNING),
         io(),
         ldsScan(),
         ldsDriver(USB_PORT,baudRate,io),
