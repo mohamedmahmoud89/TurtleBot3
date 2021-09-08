@@ -40,7 +40,7 @@ class OpenCrCommNode : public RosNodeBase{
         if(fs.is_open()){
                 fs<<"query#"<<endl;
                 while(getline(fs,line)&&line!="over"){
-                    cout<<line<<endl;
+                    //cout<<line<<endl;
                     if(line.size()){
                         msg.data.push_back(parseStr(line.substr(2,line.size()-2)));
                     }

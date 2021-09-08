@@ -1,4 +1,7 @@
 <launch>
+  <machine name="pi" address="192.168.0.88" user="pi" env-loader="/home/pi/catkin_ws/devel/env.sh"/>
+  <node machine="pi" name="opencr_node" pkg="turtleBot3" type="opencr_node" output="screen"/>
+  <node machine="pi" name="lds_node" pkg="turtleBot3" type="lds_node" output="screen"/>
   <node name="hmi_node" pkg="turtleBot3" type="hmi_node" output="screen" launch-prefix="gnome-terminal --command"/>
   <node name="odom_node" pkg="turtleBot3" type="odom_node" output="screen" launch-prefix="gnome-terminal --command"/>
   <node name="lfx_node" pkg="turtleBot3" type="lfx_node" output="screen" launch-prefix="gnome-terminal --command "/>
