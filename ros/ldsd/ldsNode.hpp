@@ -37,8 +37,7 @@ public:
         };
 
         void poll(){
-            Lock l(scanLock);
-            ldsDriver.poll(ldsScan);
+            ldsDriver.poll(ldsScan,scanLock);
         }
 private:
     static const u32 baudRate{230400};
