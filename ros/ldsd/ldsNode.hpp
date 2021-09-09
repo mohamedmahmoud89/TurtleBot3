@@ -8,16 +8,9 @@
 
 class LdsNode : public RosNodeBase{
     void update() override{
-        sensor_msgs::LaserScan latest;
         ldsDriver.poll(ldsScan);
-        {
-            //Lock l(scanLock);
-            latest=ldsScan;
-        }
-
-        latest.header.stamp = ros::Time::now();
-
-        ldsPub.publish(latest);
+        ldsScan.header.stamp = ros::Time::now();
+        ldsPub.publish(ldsScan);
     }
 
 public:
@@ -36,19 +29,12 @@ public:
             ldsScan.ranges.resize(360);
             ldsScan.intensities.resize(360);
         };
-
-        void poll(){
-            //ldsDriver.poll(ldsScan);
-        }
 private:
     static const u32 baudRate{230400};
     boost::asio::io_service io;
     hls_lfcd_lds::LFCDLaser ldsDriver;
     Publisher ldsPub;
     sensor_msgs::LaserScan ldsScan;
-    static mutex scanLock;
 };
-
-mutex LdsNode::scanLock;
 
 #endif

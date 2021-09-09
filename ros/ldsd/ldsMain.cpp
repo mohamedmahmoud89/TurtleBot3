@@ -7,9 +7,5 @@ int main(int argc,char** argv)
     LdsNode node;
     node.run();
 
-    while(true){
-        node.poll();
-    }
-
     return 0;
 }
