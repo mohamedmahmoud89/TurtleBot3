@@ -94,7 +94,7 @@ class OdomNode : public RosNodeBase{
     }
 public:
     OdomNode(): 
-        RosNodeBase(),
+        RosNodeBase("odom"),
         odomDataSub(n.subscribe("odom",100,processData)),
         posDataPub(n.advertise<geometry_msgs::Pose2D>("robotPos",1000)){}
 private:

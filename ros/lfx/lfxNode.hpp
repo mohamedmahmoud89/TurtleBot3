@@ -333,7 +333,7 @@ class LfxNode : public RosNodeBase{
     }
 public:
     LfxNode():
-        RosNodeBase(),
+        RosNodeBase("lfx"),
         robotPosSub(n.subscribe("robotPos",100,storePos)),
         ldsScanSub(n.subscribe("ldsScan",100,storeScan)),
         rvizPointsPub(n.advertise<visualization_msgs::Marker>("rvizPoints", 1000)),

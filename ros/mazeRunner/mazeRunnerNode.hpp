@@ -182,7 +182,7 @@ class MazeRunnerNode : public RosNodeBase{
     }
 public:
     MazeRunnerNode(): 
-        RosNodeBase(),
+        RosNodeBase("mazeRunner"),
         lfx(lfxInData,lfxOutData),
         robotPosSub(n.subscribe("robotPos",100,storePos)),
         ldsScanSub(n.subscribe("ldsScan",100,storeScan)),

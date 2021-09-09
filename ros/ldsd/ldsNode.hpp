@@ -15,7 +15,7 @@ class LdsNode : public RosNodeBase{
 
 public:
     LdsNode():
-        RosNodeBase(RosNodeBaseType::NON_SPINNING),
+        RosNodeBase(RosNodeBaseType::NON_SPINNING,"lds"),
         io(),
         ldsScan(),
         ldsDriver(USB_PORT,baudRate,io),

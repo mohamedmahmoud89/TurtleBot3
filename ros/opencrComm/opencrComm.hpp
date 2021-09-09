@@ -61,7 +61,7 @@ class OpenCrCommNode : public RosNodeBase{
     }
 public:
     OpenCrCommNode():
-            RosNodeBase(),
+            RosNodeBase("openCR"),
             ctrlCmdDataSub(n.subscribe("ctrlCmd",100,sendData)),
             odomDataPub(n.advertise<std_msgs::Int16MultiArray>("odom", 1000)){}
 
