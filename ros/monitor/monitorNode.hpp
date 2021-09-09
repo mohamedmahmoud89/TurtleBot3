@@ -47,7 +47,7 @@ public:
     MonitorNode():
         RosNodeBase(rate_hz,"monitor"),
         odomDataSub(n.subscribe("rt_odom",100,processOdomData)),
-        opencrDataSub(n.subscribe("rt_opencr",100,processOpencrData)),
+        opencrDataSub(n.subscribe("rt_openCR",100,processOpencrData)),
         ldsDataSub(n.subscribe("rt_lds",100,processLdsData)),
         lfxDataSub(n.subscribe("rt_lfx",100,processLfxData)){}
 
