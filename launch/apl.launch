@@ -4,6 +4,8 @@
   <node machine="pi" name="lds_node" pkg="turtleBot3" type="lds_node"/>
   <node name="hmi_node" pkg="turtleBot3" type="hmi_node" output="screen" launch-prefix="gnome-terminal --command"/>
   <node name="odom_node" pkg="turtleBot3" type="odom_node" />
-  <node name="lfx_node" pkg="turtleBot3" type="lfx_node" />
+  <node name="lfx_node" pkg="turtleBot3" type="lfx_node"/>
+  <node name="disp_node" pkg="turtleBot3" type="disp_node" />  
   <node name="mon_node" pkg="turtleBot3" type="mon_node" output="screen" />
+  <node name="rviz" pkg="rviz" type="rviz" />  
 </launch>

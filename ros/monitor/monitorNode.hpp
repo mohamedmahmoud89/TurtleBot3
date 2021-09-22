@@ -11,6 +11,7 @@ enum Nodes{
     OPENCR,
     LDS,
     LFX,
+    DISP,
     NUM_NODES
 };
 
@@ -43,13 +44,18 @@ class MonitorNode : public RosNodeBase{
         Lock l(lock);
         latest_rt[LFX].rt=msg.data;
     }
+    static void processDispData(const std_msgs::Float64& msg){
+        Lock l(lock);
+        latest_rt[DISP].rt=msg.data;
+    }
 public:
     MonitorNode():
         RosNodeBase(rate_hz,"monitor"),
         odomDataSub(n.subscribe("rt_odom",100,processOdomData)),
         opencrDataSub(n.subscribe("rt_openCR",100,processOpencrData)),
         ldsDataSub(n.subscribe("rt_lds",100,processLdsData)),
-        lfxDataSub(n.subscribe("rt_lfx",100,processLfxData)){}
+        lfxDataSub(n.subscribe("rt_lfx",100,processLfxData)),
+        dispDataSub(n.subscribe("rt_display",100,processDispData)){}
 
 private:
     static rtElement latest_rt[NUM_NODES];
@@ -57,11 +63,12 @@ private:
     Subscriber opencrDataSub;
     Subscriber ldsDataSub;
     Subscriber lfxDataSub;
+    Subscriber dispDataSub;
     static constexpr u16 rate_hz=10;
     static mutex lock;
 };
 
-rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"odom"},{0,"opencr"},{0,"lds"},{0,"lfx"}};
+rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"odom"},{0,"opencr"},{0,"lds"},{0,"lfx"},{0,"disp"}};
 mutex MonitorNode::lock;
 
 #endif

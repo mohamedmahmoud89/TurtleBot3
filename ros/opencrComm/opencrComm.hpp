@@ -36,8 +36,10 @@ class OpenCrCommNode : public RosNodeBase{
         dim.size=2;
         dim.stride=1;
         msg.layout.dim.push_back(dim);
-        fs.open(FILE);
-        if(fs.is_open()){
+        {
+            Lock l(fileMux);
+            fs.open(FILE);
+            if(fs.is_open()){
                 fs<<"query#"<<endl;
                 while(getline(fs,line)&&line!="over"){
                     //cout<<line<<endl;
@@ -46,12 +48,14 @@ class OpenCrCommNode : public RosNodeBase{
                     }
                 }
                 fs.close();
+            }
         }
         odomDataPub.publish(msg);
     }
     static void sendData(const std_msgs::String& msg){
         fstream fs;
         string line;
+        Lock l(fileMux);
         fs.open(FILE);
         if(fs.is_open()){
                 fs<<msg.data<<'#'<<endl;
@@ -68,6 +72,9 @@ public:
 private:
     Subscriber ctrlCmdDataSub;
     Publisher odomDataPub;
+    static mutex fileMux;
 };
+
+mutex OpenCrCommNode::fileMux;
 
 #endif

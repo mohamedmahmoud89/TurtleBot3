@@ -53,6 +53,7 @@ add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
 add_executable(lfx_node ros/lfx/lfxMain.cpp)
 add_executable(maze_node ros/mazeRunner/mazeRunnerMain.cpp)
 add_executable(mon_node ros/monitor/monitorMain.cpp)
+add_executable(disp_node ros/disp/displayMain.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -81,5 +82,9 @@ add_executable(mon_node ros/monitor/monitorMain.cpp)
  )
  target_link_libraries(
    mon_node
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(
+   disp_node
    ${catkin_LIBRARIES}
  )
