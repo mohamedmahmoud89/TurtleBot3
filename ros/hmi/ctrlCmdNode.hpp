@@ -17,11 +17,11 @@ class CtrlCmdNode : public RosNodeBase{
         cout<<"Enter Command:"<<endl;
         
         cin>>cmd;
-        if(cmd=="f")msg.data="fwd";
-        if(cmd=="b")msg.data="bwd";
-        if(cmd=="s")msg.data="stop";
-        if(cmd=="l")msg.data="left";
-        if(cmd=="r")msg.data="right";
+        if(cmd=="8")msg.data="fwd";
+        if(cmd=="2")msg.data="bwd";
+        if(cmd=="5")msg.data="stop";
+        if(cmd=="4")msg.data="left";
+        if(cmd=="6")msg.data="right";
         if(cmd=="+")msg.data="up";
         if(cmd=="-")msg.data="down";
 
