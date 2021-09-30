@@ -20,6 +20,7 @@ class LfxNode : public RosNodeBase{
     void update() override{
         RobotPos loc_pos(0,0,0);
         vector<u16> loc_scan;
+        vector<u16> loc_intensity;
         LfxFeats feats;
         geometry_msgs::PoseArray msg;
         
@@ -30,9 +31,10 @@ class LfxNode : public RosNodeBase{
         {
             Lock mux(scanMux);
             loc_scan=scan;
+            loc_intensity=intensity;
         }
 
-        extractFeats(loc_pos,loc_scan,feats);
+        extractFeats(loc_pos,loc_scan,loc_intensity,feats);
 
         publish(feats);
     }
@@ -98,19 +100,51 @@ class LfxNode : public RosNodeBase{
     void extractFeats(
             const RobotPos& pos,
             const vector<u16>& scan,
+            const vector<u16>& intensity,
             LfxFeats& lfx_feats){
-        vector<Point2DPolar> valid_scan;
-        vector<Line2DPolar> line_params;
+        vector<vector<Point2DPolar>> valid_scan;
+        
 
         // extract points
-        for(u16 idx=0;idx<scan.size();idx++){
-            if(scan[idx]>=LdsSensorCfg::minDepth_mm && scan[idx]<=LdsSensorCfg::maxDepth_mm){
+        u16 idx=0;      
+        si16 last_r_mm=0;
+        bool last_r_initialized=false;
+        while(idx<scan.size()){
+            /*if(intensity[idx]>LdsSensorCfg::maxIntensity&&scan[idx]>=LdsSensorCfg::minDepth_mm /*&& scan[idx]<=LdsSensorCfg::maxDepth_mm){
                 f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
                 f32 ang=idx*AngConversions::degToRad;
                 f32 x=pos.x_mm + (range*cos(ang));
                 f32 y=pos.y_mm + (range*sin(ang));
                 lfx_feats.points.push_back(Point2D(x,y));
                 valid_scan.push_back(Point2DPolar(scan[idx],ang));
+            }*/
+            vector<Point2DPolar> temp;
+            u16 count=0;
+            while(idx<scan.size()&&count<10&&(abs(si16(scan[idx])-last_r_mm)<10||!last_r_initialized))
+            {
+                if(intensity[idx]>=LdsSensorCfg::minIntensity&&scan[idx]>=LdsSensorCfg::minDepth_mm){
+                    f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
+                    f32 ang=idx*AngConversions::degToRad;
+                    f32 x=pos.x_mm + (range*cos(ang));
+                    f32 y=pos.y_mm + (range*sin(ang));
+                    lfx_feats.points.push_back(Point2D(x,y));
+                    temp.push_back(Point2DPolar(scan[idx],ang));
+                    count=0;
+                }
+                else
+                {
+                    count++;
+                }
+                last_r_mm=scan[idx];
+                last_r_initialized=true;
+                idx++;
+            }
+            last_r_initialized=true;
+            if(temp.size()>10)
+                valid_scan.push_back(temp);
+            while(idx<scan.size()&&(intensity[idx]<LdsSensorCfg::minIntensity||scan[idx]<LdsSensorCfg::minDepth_mm||abs(si16(scan[idx])-last_r_mm)>=10)){
+                last_r_mm=scan[idx];
+                idx++;
             }
         }
 
@@ -118,9 +152,14 @@ class LfxNode : public RosNodeBase{
             return;
 
         // extract lines
-        segmentScan(valid_scan,0,valid_scan.size()-1,line_params);
-        for(u16 i=0;i<line_params.size();++i){
-            constructLineFeat(line_params[i],lfx_feats);
+        cout<<"num_Sets="<<valid_scan.size()<<endl;
+        for(auto& set:valid_scan){
+            vector<Line2DPolar> line_params;
+            cout<<"set_size"<<set.size()<<endl;
+            segmentScan(set,0,set.size()-1,line_params);
+            for(u16 i=0;i<line_params.size();++i){
+                constructLineFeat(line_params[i],lfx_feats);
+            }
         }
 
         // extract corners/edges
@@ -256,6 +295,7 @@ class LfxNode : public RosNodeBase{
         Lock mux(scanMux);
         for(u16 idx=0;idx<msg.ranges.size();idx++){
             scan[idx]=static_cast<u16>(msg.ranges[idx]);
+            intensity[idx]=static_cast<u16>(msg.intensities[idx]);
         }
     }
 public:
@@ -276,6 +316,7 @@ private:
     Publisher featEdgePub;
     static RobotPos pos;
     static vector<u16> scan; 
+    static vector<u16> intensity; 
     static mutex posMux;
     static mutex scanMux;
     static const u16 normal_dist_threshold_mm=25;
@@ -283,6 +324,7 @@ private:
 
 RobotPos LfxNode::pos(0,0,M_PI_2);
 vector<u16> LfxNode::scan(360,0);
+vector<u16> LfxNode::intensity(360,0);
 mutex LfxNode::posMux;
 mutex LfxNode::scanMux;
 
