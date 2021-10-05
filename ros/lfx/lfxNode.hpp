@@ -16,6 +16,13 @@ enum LfxFeatType{
     EDGE
 };
 
+struct LfxCfg{
+    static const u16 normal_dist_threshold_mm{25};
+    static const u16 max_dist_adj_pts_mm{10};
+    static const u16 min_pts_for_line_fitting{5};
+    static const u16 min_pts_gap_between_lines{10};
+};
+
 class LfxNode : public RosNodeBase{
     void update() override{
         RobotPos loc_pos(0,0,0);
@@ -105,22 +112,20 @@ class LfxNode : public RosNodeBase{
         vector<vector<Point2DPolar>> valid_scan;
         
 
-        // extract points
+        // extract and pre-filter points
         u16 idx=0;      
         si16 last_r_mm=0;
         bool last_r_initialized=false;
         while(idx<scan.size()){
-            /*if(intensity[idx]>LdsSensorCfg::maxIntensity&&scan[idx]>=LdsSensorCfg::minDepth_mm /*&& scan[idx]<=LdsSensorCfg::maxDepth_mm){
-                f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
-                f32 ang=idx*AngConversions::degToRad;
-                f32 x=pos.x_mm + (range*cos(ang));
-                f32 y=pos.y_mm + (range*sin(ang));
-                lfx_feats.points.push_back(Point2D(x,y));
-                valid_scan.push_back(Point2DPolar(scan[idx],ang));
-            }*/
             vector<Point2DPolar> temp;
             u16 count=0;
-            while(idx<scan.size()&&count<10&&(abs(si16(scan[idx])-last_r_mm)<10||!last_r_initialized))
+            while(
+                    idx<scan.size()&&count<LfxCfg::min_pts_gap_between_lines&&
+                    (
+                        abs(si16(scan[idx])-last_r_mm)<LfxCfg::max_dist_adj_pts_mm||
+                        !last_r_initialized
+                    )
+                )
             {
                 if(intensity[idx]>=LdsSensorCfg::minIntensity&&scan[idx]>=LdsSensorCfg::minDepth_mm){
                     f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
@@ -139,23 +144,24 @@ class LfxNode : public RosNodeBase{
                 last_r_initialized=true;
                 idx++;
             }
-            last_r_initialized=true;
-            if(temp.size()>10)
+            if(temp.size()>LfxCfg::min_pts_for_line_fitting)
                 valid_scan.push_back(temp);
-            while(idx<scan.size()&&(intensity[idx]<LdsSensorCfg::minIntensity||scan[idx]<LdsSensorCfg::minDepth_mm||abs(si16(scan[idx])-last_r_mm)>=10)){
+            while(
+                    idx<scan.size()&&
+                    (
+                        intensity[idx]<LdsSensorCfg::minIntensity||
+                        scan[idx]<LdsSensorCfg::minDepth_mm||
+                        abs(si16(scan[idx])-last_r_mm)>=LfxCfg::max_dist_adj_pts_mm
+                    )
+                ){
                 last_r_mm=scan[idx];
                 idx++;
             }
         }
 
-        if(valid_scan.empty())
-            return;
-
         // extract lines
-        cout<<"num_Sets="<<valid_scan.size()<<endl;
         for(auto& set:valid_scan){
             vector<Line2DPolar> line_params;
-            cout<<"set_size"<<set.size()<<endl;
             segmentScan(set,0,set.size()-1,line_params);
             for(u16 i=0;i<line_params.size();++i){
                 constructLineFeat(line_params[i],lfx_feats);
@@ -167,6 +173,8 @@ class LfxNode : public RosNodeBase{
             u16 j=(i+1)%lfx_feats.lines.size();
             auto l1=lfx_feats.lines[i];
             auto l2=lfx_feats.lines[j];
+            auto lp1=lfx_feats.lines_polar[i];
+            auto lp2=lfx_feats.lines_polar[j];
             // calc dist & delta angle between each 2 consecutive lines
             f32 dist=sqrt(pow(l1.p2.x_mm-l2.p1.x_mm,2)+pow(l1.p2.y_mm-l2.p1.y_mm,2));
             f32 ang=l2.angle-l1.angle;
@@ -175,8 +183,30 @@ class LfxNode : public RosNodeBase{
             ang=fmod(ang+(2*M_PI),2*M_PI);
 
             // check whether the 2 lines form corner/edge
-            if(dist<100){
+            if(dist<50){
                 if((ang>70*AngConversions::degToRad) && (ang<110*AngConversions::degToRad)){
+                    // calculate intersections
+                    /*f32 temp_r_mm=sqrt(pow(l2.p1.x_mm,2)+pow(l2.p1.y_mm,2));
+                    f32 temp_theta_1=lp1.center.theta_rad-atan2(l2.p1.y_mm,l2.p1.x_mm);
+                    temp_theta_1=fmod(temp_theta_1+(2*M_PI),2*M_PI);
+                    f32 d1=lp1.center.r_mm-(temp_r_mm*cos(temp_theta_1));
+                    temp_theta_1=lp1.center.theta_rad-M_PI_2;
+                    temp_theta_1=fmod(temp_theta_1+(2*M_PI),2*M_PI);
+                    f32 dy1=d1*cos(temp_theta_1);
+                    f32 dx1=d1*sin(temp_theta_1);
+                    
+                    f32 temp_theta_2=lp2.center.theta_rad+M_PI_2-lp1.center.theta_rad;
+                    temp_theta_2=fmod(temp_theta_2+(2*M_PI),2*M_PI);
+                    f32 d2=d1*tan(temp_theta_2);
+                    temp_theta_2=lp1.center.theta_rad-M_PI_2;
+                    temp_theta_2=fmod(temp_theta_2+(2*M_PI),2*M_PI);
+                    f32 dy2=d2*sin(temp_theta_2);
+                    f32 dx2=d2*cos(temp_theta_2);
+                    Point2D t;
+                    t.x_mm=l2.p1.x_mm-dx1-dx2;
+                    t.y_mm=l2.p1.y_mm+dy1-dy2;
+
+                    lfx_feats.corners.push_back(t);*/
                     lfx_feats.corners.push_back(l2.p1);
                 }
                 else if((ang>250*AngConversions::degToRad) && (ang<290*AngConversions::degToRad)){
@@ -203,6 +233,7 @@ class LfxNode : public RosNodeBase{
         l.p2.x_mm=center_x+d_end*cos(ang_end);
         l.p2.y_mm=center_y+d_end*sin(ang_end);
         lfx_feats.lines.push_back(l);
+        lfx_feats.lines_polar.push_back(line_param);
     }
 
     void segmentScan(
@@ -220,7 +251,7 @@ class LfxNode : public RosNodeBase{
 
         fitLineLeastSquares(scan_segment,start_idx,end_idx,temp_line_param,max_norm_dist,split_idx); 
 
-        if(max_norm_dist>normal_dist_threshold_mm){
+        if(max_norm_dist>LfxCfg::normal_dist_threshold_mm){
             // split at slpit_idx and call segmentScan() twice 
             segmentScan(scan_segment,start_idx,split_idx,line_params);
             segmentScan(scan_segment,split_idx+1,end_idx,line_params);
@@ -319,7 +350,6 @@ private:
     static vector<u16> intensity; 
     static mutex posMux;
     static mutex scanMux;
-    static const u16 normal_dist_threshold_mm=25;
 };
 
 RobotPos LfxNode::pos(0,0,M_PI_2);

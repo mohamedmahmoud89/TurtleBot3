@@ -29,7 +29,7 @@ struct LdsSensorCfg{
     static const u16 minDepth_mm{120};
     static const u16 maxDepth_mm{500};
     static const u16 sensorOffset_mm{20};
-    static const u16 minIntensity{3000};
+    static const u16 minIntensity{2500};
 };
 
 struct WheelVelocity{
@@ -87,6 +87,7 @@ struct Line2DPolar{
 struct LfxFeats{
     vector<Point2D> points;
     vector<Line2D> lines;
+    vector<Line2DPolar> lines_polar;
     vector<Point2D> corners;
     vector<Point2D> edges;
 };
