@@ -8,9 +8,11 @@ using namespace std;
 
 class HmiGatewayNode : public RosNodeBase{
     void update() override{
-        Lock l(lock);
         std_msgs::String msg;
-        msg.data=cmd;
+        {
+            Lock l(lock);
+            msg.data=cmd;
+        }
         ctrlCmdDataPub.publish(msg);
     }
 

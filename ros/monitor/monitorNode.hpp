@@ -8,6 +8,7 @@ using namespace std;
 
 enum Nodes{
     ODOM=0,
+    GATEWAY,
     OPENCR,
     LDS,
     LFX,
@@ -48,6 +49,10 @@ class MonitorNode : public RosNodeBase{
         Lock l(lock);
         latest_rt[DISP].rt=msg.data;
     }
+    static void processHmiData(const std_msgs::Float64& msg){
+        Lock l(lock);
+        latest_rt[GATEWAY].rt=msg.data;
+    }
 public:
     MonitorNode():
         RosNodeBase(rate_hz,"monitor"),
@@ -55,6 +60,7 @@ public:
         opencrDataSub(n.subscribe("rt_openCR",100,processOpencrData)),
         ldsDataSub(n.subscribe("rt_lds",100,processLdsData)),
         lfxDataSub(n.subscribe("rt_lfx",100,processLfxData)),
+        HmiDataSub(n.subscribe("rt_hmiGateway",100,processHmiData)),
         dispDataSub(n.subscribe("rt_display",100,processDispData)){}
 
 private:
@@ -63,12 +69,13 @@ private:
     Subscriber opencrDataSub;
     Subscriber ldsDataSub;
     Subscriber lfxDataSub;
+    Subscriber HmiDataSub;
     Subscriber dispDataSub;
     static constexpr u16 rate_hz=10;
     static mutex lock;
 };
 
-rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"odom"},{0,"opencr"},{0,"lds"},{0,"lfx"},{0,"disp"}};
+rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"odom"},{0,"opencr"},{0,"lds"},{0,"lfx"},{0,"disp"},{0,"hmi"}};
 mutex MonitorNode::lock;
 
 #endif
