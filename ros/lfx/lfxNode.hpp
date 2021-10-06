@@ -53,55 +53,64 @@ class LfxNode : public RosNodeBase{
         geometry_msgs::PoseArray msg_edges;
         
         // points
-        if(feats.points.size()){
-            msg_pts.poses.reserve(feats.points.size());
-            for(auto& pt:feats.points){
-                geometry_msgs::Pose p;
-                p.position.x=pt.x_mm;
-                p.position.y=pt.y_mm;
-                msg_pts.poses.push_back(p);
-            }
-            featPtPub.publish(msg_pts);
+        msg_pts.poses.reserve(feats.points.size());
+        for(auto& pt:feats.points){
+            geometry_msgs::Pose p;
+            p.position.x=pt.x_mm;
+            p.position.y=pt.y_mm;
+            msg_pts.poses.push_back(p);
         }
+        featPtPub.publish(msg_pts);
 
         // lines
-        if(feats.lines.size()){
-            msg_lines.poses.reserve(feats.lines.size()<<1);
-            for(auto&l:feats.lines){
-                geometry_msgs::Pose p;
-                p.position.x=l.p1.x_mm;
-                p.position.y=l.p1.y_mm;
-                msg_lines.poses.push_back(p);
-                p.position.x=l.p2.x_mm;
-                p.position.y=l.p2.y_mm;
-                msg_lines.poses.push_back(p);
-            }
-            featLnPub.publish(msg_lines);
+        msg_lines.poses.reserve(feats.lines.size()<<1);
+        for(auto&l:feats.lines){
+            geometry_msgs::Pose p;
+            p.position.x=l.p1.x_mm;
+            p.position.y=l.p1.y_mm;
+            msg_lines.poses.push_back(p);
+            p.position.x=l.p2.x_mm;
+            p.position.y=l.p2.y_mm;
+            msg_lines.poses.push_back(p);
         }
+        featLnPub.publish(msg_lines);
 
         // corners
-        if(feats.corners.size()){
-            msg_corners.poses.reserve(feats.corners.size());
-            for(auto& pt:feats.corners){
-                geometry_msgs::Pose p;
-                p.position.x=pt.x_mm;
-                p.position.y=pt.y_mm;
-                msg_corners.poses.push_back(p);
-            }
-            featCornerPub.publish(msg_corners);
+        msg_corners.poses.reserve(feats.corners.size());
+        for(auto& pt:feats.corners){
+            geometry_msgs::Pose p;
+            p.position.x=pt.x_mm;
+            p.position.y=pt.y_mm;
+            msg_corners.poses.push_back(p);
         }
+        featCornerPub.publish(msg_corners);
 
-        // corners
-        if(feats.edges.size()){
-            msg_edges.poses.reserve(feats.edges.size());
-            for(auto& pt:feats.edges){
-                geometry_msgs::Pose p;
-                p.position.x=pt.x_mm;
-                p.position.y=pt.y_mm;
-                msg_edges.poses.push_back(p);
-            }
-            featEdgePub.publish(msg_edges);
+        // edges
+        msg_edges.poses.reserve(feats.edges.size());
+        for(auto& pt:feats.edges){
+            geometry_msgs::Pose p;
+            p.position.x=pt.x_mm;
+            p.position.y=pt.y_mm;
+            msg_edges.poses.push_back(p);
         }
+        featEdgePub.publish(msg_edges);
+    }
+
+    inline bool calculateIntersection(const Line2D& l1,const Line2D& l2,Point2D& t){
+        if(l1.p1.x_mm-l1.p2.x_mm!=0&&l2.p1.x_mm-l2.p2.x_mm!=0){
+            f32 m1=((l1.p1.y_mm-l1.p2.y_mm)/(l1.p1.x_mm-l1.p2.x_mm));
+            f32 b1=l1.p1.y_mm-(m1*l1.p1.x_mm);
+
+            f32 m2=((l2.p1.y_mm-l2.p2.y_mm)/(l2.p1.x_mm-l2.p2.x_mm));
+            f32 b2=l2.p1.y_mm-(m2*l2.p1.x_mm);
+
+            if(m1-m2!=0){
+                t.x_mm=((b2-b1)/(m1-m2));
+                t.y_mm=(m1*t.x_mm)+b1;
+                return true;
+            }
+        }
+        return false;
     }
 
     void extractFeats(
@@ -121,13 +130,15 @@ class LfxNode : public RosNodeBase{
             u16 count=0;
             while(
                     idx<scan.size()&&count<LfxCfg::min_pts_gap_between_lines&&
+                    scan[idx]>=LdsSensorCfg::minDepth_mm&&
+                    scan[idx]<=LdsSensorCfg::maxDepth_mm&&
                     (
                         abs(si16(scan[idx])-last_r_mm)<LfxCfg::max_dist_adj_pts_mm||
                         !last_r_initialized
                     )
                 )
             {
-                if(intensity[idx]>=LdsSensorCfg::minIntensity&&scan[idx]>=LdsSensorCfg::minDepth_mm){
+                if(intensity[idx]>=LdsSensorCfg::minIntensity){
                     f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
                     f32 ang=idx*AngConversions::degToRad;
                     f32 x=pos.x_mm + (range*cos(ang));
@@ -151,6 +162,7 @@ class LfxNode : public RosNodeBase{
                     (
                         intensity[idx]<LdsSensorCfg::minIntensity||
                         scan[idx]<LdsSensorCfg::minDepth_mm||
+                        scan[idx]>LdsSensorCfg::maxDepth_mm||
                         abs(si16(scan[idx])-last_r_mm)>=LfxCfg::max_dist_adj_pts_mm
                     )
                 ){
@@ -173,8 +185,6 @@ class LfxNode : public RosNodeBase{
             u16 j=(i+1)%lfx_feats.lines.size();
             auto l1=lfx_feats.lines[i];
             auto l2=lfx_feats.lines[j];
-            auto lp1=lfx_feats.lines_polar[i];
-            auto lp2=lfx_feats.lines_polar[j];
             // calc dist & delta angle between each 2 consecutive lines
             f32 dist=sqrt(pow(l1.p2.x_mm-l2.p1.x_mm,2)+pow(l1.p2.y_mm-l2.p1.y_mm,2));
             f32 ang=l2.angle-l1.angle;
@@ -183,34 +193,18 @@ class LfxNode : public RosNodeBase{
             ang=fmod(ang+(2*M_PI),2*M_PI);
 
             // check whether the 2 lines form corner/edge
-            if(dist<50){
+            if(dist<100){
                 if((ang>70*AngConversions::degToRad) && (ang<110*AngConversions::degToRad)){
                     // calculate intersections
-                    /*f32 temp_r_mm=sqrt(pow(l2.p1.x_mm,2)+pow(l2.p1.y_mm,2));
-                    f32 temp_theta_1=lp1.center.theta_rad-atan2(l2.p1.y_mm,l2.p1.x_mm);
-                    temp_theta_1=fmod(temp_theta_1+(2*M_PI),2*M_PI);
-                    f32 d1=lp1.center.r_mm-(temp_r_mm*cos(temp_theta_1));
-                    temp_theta_1=lp1.center.theta_rad-M_PI_2;
-                    temp_theta_1=fmod(temp_theta_1+(2*M_PI),2*M_PI);
-                    f32 dy1=d1*cos(temp_theta_1);
-                    f32 dx1=d1*sin(temp_theta_1);
-                    
-                    f32 temp_theta_2=lp2.center.theta_rad+M_PI_2-lp1.center.theta_rad;
-                    temp_theta_2=fmod(temp_theta_2+(2*M_PI),2*M_PI);
-                    f32 d2=d1*tan(temp_theta_2);
-                    temp_theta_2=lp1.center.theta_rad-M_PI_2;
-                    temp_theta_2=fmod(temp_theta_2+(2*M_PI),2*M_PI);
-                    f32 dy2=d2*sin(temp_theta_2);
-                    f32 dx2=d2*cos(temp_theta_2);
                     Point2D t;
-                    t.x_mm=l2.p1.x_mm-dx1-dx2;
-                    t.y_mm=l2.p1.y_mm+dy1-dy2;
-
-                    lfx_feats.corners.push_back(t);*/
-                    lfx_feats.corners.push_back(l2.p1);
+                    if(calculateIntersection(l1,l2,t))
+                        lfx_feats.corners.push_back(t);
                 }
                 else if((ang>250*AngConversions::degToRad) && (ang<290*AngConversions::degToRad)){
-                    lfx_feats.edges.push_back(l2.p1);
+                    // calculate intersections
+                    Point2D t;
+                    if(calculateIntersection(l1,l2,t))
+                        lfx_feats.edges.push_back(t);
                 }
             }
         }
