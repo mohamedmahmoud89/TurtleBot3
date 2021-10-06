@@ -33,7 +33,7 @@ class CtrlCmdNode : public RosNodeBase{
 public:
     CtrlCmdNode():
         RosNodeBase("hmi"),
-        ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmd", 1000)){}
+        ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmdCaptured", 1000)){}
 
 private:
     Publisher ctrlCmdDataPub;

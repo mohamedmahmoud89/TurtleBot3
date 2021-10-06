@@ -56,11 +56,15 @@ class OpenCrCommNode : public RosNodeBase{
         fstream fs;
         string line;
         Lock l(fileMux);
+        if(msg.data==lastCmd)
+            return;
+        
         fs.open(FILE);
         if(fs.is_open()){
                 fs<<msg.data<<'#'<<endl;
                 while(getline(fs,line)&&line!="over"){}
                 fs.close();
+                lastCmd=msg.data;
         }
     }
 public:
@@ -73,8 +77,10 @@ private:
     Subscriber ctrlCmdDataSub;
     Publisher odomDataPub;
     static mutex fileMux;
+    static string lastCmd;
 };
 
 mutex OpenCrCommNode::fileMux;
+string OpenCrCommNode::lastCmd="";
 
 #endif
