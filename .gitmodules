@@ -1,0 +1,3 @@
+[submodule "core/eigen"]
+	path = core/eigen
+	url = https://github.com/libigl/eigen.git

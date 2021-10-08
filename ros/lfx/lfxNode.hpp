@@ -2,19 +2,12 @@
 #define LFX_NODE_HPP
 
 #include "nodeBase.hpp"
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PoseArray.h>
 #include <vector>
-#include <visualization_msgs/Marker.h>
 
 using namespace std;
-
-enum LfxFeatType{
-    CORNER=0,
-    EDGE
-};
 
 struct LfxCfg{
     static const u16 normal_dist_threshold_mm{25};
@@ -29,7 +22,6 @@ class LfxNode : public RosNodeBase{
         vector<u16> loc_scan;
         vector<u16> loc_intensity;
         LfxFeats feats;
-        geometry_msgs::PoseArray msg;
         
         {
             Lock mux(posMux);
