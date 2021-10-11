@@ -33,7 +33,8 @@ include_directories(
   core/lfx
   core/eigen
   core/ekf
-  core/featAssociation
+  core/feat
+  core/pf
 )
 
 ## Declare a C++ library
@@ -55,10 +56,9 @@ add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
 add_executable(odom_node ros/odom/odomMain.cpp)
 add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
 add_executable(lfx_node ros/lfx/lfxMain.cpp)
-add_executable(maze_node ros/mazeRunner/mazeRunnerMain.cpp)
 add_executable(mon_node ros/monitor/monitorMain.cpp)
 add_executable(disp_node ros/disp/displayMain.cpp)
-add_executable(map_node ros/map/mapMain.cpp)
+add_executable(mcl_node ros/mcl/mclMain.cpp core/pf/pf.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -86,10 +86,6 @@ add_executable(map_node ros/map/mapMain.cpp)
    ${catkin_LIBRARIES}
  )
  target_link_libraries(
-   maze_node
-   ${catkin_LIBRARIES}
- )
- target_link_libraries(
    mon_node
    ${catkin_LIBRARIES}
  )
@@ -98,6 +94,6 @@ add_executable(map_node ros/map/mapMain.cpp)
    ${catkin_LIBRARIES}
  )
  target_link_libraries(
-   map_node
+   mcl_node
    ${catkin_LIBRARIES}
  )

@@ -10,9 +10,14 @@ struct FeatAssociationCfg{
     static constexpr f32 max_ref_dist_mm{100};
 };
 
+inline void calcFeatGlobalPos(Point2D& feat,const RobotPos& coord){
+    feat.x_mm=coord.x_mm+feat.x_mm*cos(coord.theta_rad)-feat.y_mm*sin(coord.theta_rad);
+    feat.y_mm=coord.y_mm+feat.x_mm*sin(coord.theta_rad)-feat.y_mm*cos(coord.theta_rad);
+}
+
 // nearest neighbor association
 // returns a dict[landmark idx,measurement idx]
-unordered_map<u16,u16> featAssociate(
+inline unordered_map<u16,u16> featAssociate(
         const vector<Point2D>& features,
         const vector<Point2D>& landmarks){
     unordered_map<u16,u16>ret;

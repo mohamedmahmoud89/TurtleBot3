@@ -15,6 +15,8 @@ using si32 = long;
 using f32 = float;
 using f64 = double;
 
+struct Point2D;
+
 struct RobotCfg{
     static constexpr f32 rpmOffset{0.229};
     static constexpr f32 wheelCircumference_mm{207.345115137};
@@ -46,6 +48,11 @@ struct RobotPos{
     f64 x_mm{0};
     f64 y_mm{0};
     f64 theta_rad{0};
+};
+
+struct Landmarks{
+    static const vector<Point2D>corners;
+    static const vector<Point2D>edges;
 };
 
 struct AngConversions{
