@@ -66,6 +66,10 @@ RobotPos ParticleFilter::getPosMean(){
     return RobotPos(mean_x/sz,mean_y/sz,atan2(mean_sin,mean_cos));
 }
 
+const vector<RobotPos>& ParticleFilter::getParticles(){
+    return particles;
+}
+
 f32 ParticleFilter::calcParticleWeight(const RobotPos& pos,vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight){
     for(auto&feat:feats){
         // transform the features to world coords

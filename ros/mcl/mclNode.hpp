@@ -11,17 +11,17 @@
 
 using namespace std;
 
-const vector<Point2D> Landmarks::corners={};
-const vector<Point2D> Landmarks::edges={};
+const vector<Point2D> Landmarks::corners={{0,0},{290,0},{0,580},{880,580},{580,0},{880,0}};
+const vector<Point2D> Landmarks::edges={{290,290},{580,290}};
 
 struct MclNodeCfg{
-    static constexpr f32 ctrl_motion_std{0};
-    static constexpr f32 ctrl_turn_std{0};
-    static constexpr f32 meas_x_std{0};
-    static constexpr f32 meas_y_std{0};
-    static constexpr u16 particles_num{0};
-    static constexpr u16 world_width_mm{0};
-    static constexpr u16 world_length_mm{0};
+    static constexpr f32 ctrl_motion_std{3};
+    static constexpr f32 ctrl_turn_std{3};
+    static constexpr f32 meas_x_std{3};
+    static constexpr f32 meas_y_std{3};
+    static constexpr u16 particles_num{500};
+    static constexpr u16 world_x_mm{880};
+    static constexpr u16 world_y_mm{580};
 };
 
 class MclNode : public RosNodeBase{
@@ -29,7 +29,6 @@ class MclNode : public RosNodeBase{
         WheelVelocity vel_copy(0,0);
         vector<Point2D>corners_copy;
         vector<Point2D>edges_copy;
-        geometry_msgs::Pose2D msg;
         {
             Lock l(velMux);
             vel_copy=vel;
@@ -45,12 +44,36 @@ class MclNode : public RosNodeBase{
             edges_copy=featEdges;
         }
         pf.predict(vel_copy);
-        pf.update(corners_copy,edges_copy);
+        if(vel_copy.left_rpm||vel_copy.right_rpm){
+            //pf.update(corners_copy,edges_copy);
+        }
+        publish();
+    }
+
+    void publish(){
+        geometry_msgs::PoseArray particlesMsg;
+        geometry_msgs::Pose2D globalPosMsg;
+
         RobotPos pos=pf.getPosMean();
-        msg.x=pos.x_mm;
-        msg.y=pos.y_mm;
-        msg.theta=pos.theta_rad;
-        globalPosPub.publish(msg);
+        globalPosMsg.x=pos.x_mm;
+        globalPosMsg.y=pos.y_mm;
+        globalPosMsg.theta=pos.theta_rad;
+        globalPosPub.publish(globalPosMsg);
+        
+        // particles
+        particlesMsg.poses.reserve(MclNodeCfg::particles_num);
+        for(auto& pt:pf.getParticles()){
+            geometry_msgs::Pose p;
+            p.position.x=pt.x_mm;
+            p.position.y=pt.y_mm;
+            p.orientation.z=pt.theta_rad;
+            cout<<"idx= "<<particlesMsg.poses.size()-1<<endl;
+            cout<<"x= "<<pt.x_mm<<endl;
+            cout<<"y= "<<pt.y_mm<<endl;
+            cout<<"theta= "<<pt.theta_rad<<endl;
+            particlesMsg.poses.push_back(p);
+        }
+        particlesPub.publish(particlesMsg);
     }
 
     static void storeCorners(const geometry_msgs::PoseArray& msg){
@@ -86,17 +109,19 @@ public:
                 MclNodeCfg::meas_x_std,
                 MclNodeCfg::meas_y_std,
                 MclNodeCfg::particles_num,
-                MclNodeCfg::world_length_mm,
-                MclNodeCfg::world_width_mm)),
-        robotPosSub(n.subscribe("odom",100,storeVel)),
+                MclNodeCfg::world_x_mm,
+                MclNodeCfg::world_y_mm)),
+        ctrlDataSub(n.subscribe("odom",100,storeVel)),
         featCornerSub(n.subscribe("featCorners",100,storeCorners)),
         featEdgeSub(n.subscribe("featEdges",100,storeEdges)),
-        globalPosPub(n.advertise<geometry_msgs::Pose2D>("globalPos", 1000)){}
+        globalPosPub(n.advertise<geometry_msgs::Pose2D>("globalPos", 1000)),
+        particlesPub(n.advertise<geometry_msgs::PoseArray>("particles", 1000)){}
 private:
-    Subscriber robotPosSub;
+    Subscriber ctrlDataSub;
     Subscriber featCornerSub;
     Subscriber featEdgeSub;
     Publisher globalPosPub;
+    Publisher particlesPub;
     ParticleFilter pf;
     static WheelVelocity vel;
     static vector<Point2D>featCorners;

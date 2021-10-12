@@ -41,6 +41,7 @@ public:
                 vector<Point2D>& feat_corners,
                 vector<Point2D>& feat_edges);
         RobotPos getPosMean();
+        const vector<RobotPos>& getParticles();
 private:
         vector<f32> calcImpWeights(
                 vector<Point2D>& feat_corners,

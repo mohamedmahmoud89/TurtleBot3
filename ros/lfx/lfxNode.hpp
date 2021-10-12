@@ -168,7 +168,7 @@ class LfxNode : public RosNodeBase{
             vector<Line2DPolar> line_params;
             segmentScan(set,0,set.size()-1,line_params);
             for(u16 i=0;i<line_params.size();++i){
-                constructLineFeat(line_params[i],lfx_feats);
+                constructLineFeat(pos,line_params[i],lfx_feats);
             }
         }
 
@@ -202,7 +202,7 @@ class LfxNode : public RosNodeBase{
         }
     }
 
-    inline void constructLineFeat(const Line2DPolar& line_param,LfxFeats& lfx_feats){
+    inline void constructLineFeat(const RobotPos& pos,const Line2DPolar& line_param,LfxFeats& lfx_feats){
         f32 r=line_param.center.r_mm;
         f32 theta=line_param.center.theta_rad;
         Line2D l;
@@ -303,9 +303,12 @@ class LfxNode : public RosNodeBase{
 
     static void storePos(const geometry_msgs::Pose2D& msg){
         Lock mux(posMux);
-        pos.x_mm = msg.x;
+        /*pos.x_mm = msg.x;
         pos.y_mm = msg.y;
-        pos.theta_rad =msg.theta;
+        pos.theta_rad =msg.theta;*/
+        pos.x_mm = 0;
+        pos.y_mm = 0;
+        pos.theta_rad =0;
     }
 
     static void storeScan(const sensor_msgs::LaserScan& msg){
