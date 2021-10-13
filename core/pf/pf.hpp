@@ -46,7 +46,7 @@ private:
         vector<f32> calcImpWeights(
                 vector<Point2D>& feat_corners,
                 vector<Point2D>& feat_edges);
-        f32 calcParticleWeight(const RobotPos& pos,vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight);
+        f32 calcParticleWeight(const RobotPos& pos,const vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight);
         pair<f32,f32> computeSigmaCtrl(const WheelVelocity& wheelVelocity);
         void resample(const vector<f32>& weights);
 

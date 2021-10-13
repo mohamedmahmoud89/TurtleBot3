@@ -57,8 +57,8 @@ add_executable(odom_node ros/odom/odomMain.cpp)
 add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
 add_executable(lfx_node ros/lfx/lfxMain.cpp)
 add_executable(mon_node ros/monitor/monitorMain.cpp)
-add_executable(disp_node ros/disp/displayMain.cpp)
-add_executable(mcl_node ros/mcl/mclMain.cpp core/pf/pf.cpp)
+add_executable(disp_node ros/disp/displayMain.cpp core/common/common.cpp)
+add_executable(mcl_node ros/mcl/mclMain.cpp core/pf/pf.cpp core/common/common.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(

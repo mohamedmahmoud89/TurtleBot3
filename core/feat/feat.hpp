@@ -7,16 +7,17 @@
 using namespace std; 
 
 struct FeatAssociationCfg{
-    static constexpr f32 max_ref_dist_mm{100};
+    static constexpr f32 max_ref_dist_mm{50};
 };
 
-inline void calcFeatGlobalPos(Point2D& feat,const RobotPos& coord){
-    feat.x_mm=coord.x_mm+feat.x_mm*cos(coord.theta_rad)-feat.y_mm*sin(coord.theta_rad);
-    feat.y_mm=coord.y_mm+feat.x_mm*sin(coord.theta_rad)-feat.y_mm*cos(coord.theta_rad);
+inline Point2D calcFeatGlobalPos(const Point2D& feat,const RobotPos& coord){
+    return Point2D(
+        coord.x_mm+feat.x_mm*cos(coord.theta_rad)-feat.y_mm*sin(coord.theta_rad),
+        coord.y_mm+feat.x_mm*sin(coord.theta_rad)+feat.y_mm*cos(coord.theta_rad));
 }
 
 // nearest neighbor association
-// returns a dict[landmark idx,measurement idx]
+// returns a dict[measurement idx,landmark idx]
 inline unordered_map<u16,u16> featAssociate(
         const vector<Point2D>& features,
         const vector<Point2D>& landmarks){
@@ -29,7 +30,7 @@ inline unordered_map<u16,u16> featAssociate(
                 pow(features[i].y_mm-landmarks[j].y_mm,2)); 
             if(dist_squared<min_squared){
                 min_squared=dist_squared;
-                ret[j]=i;
+                ret[i]=j;
             }
         }
     }

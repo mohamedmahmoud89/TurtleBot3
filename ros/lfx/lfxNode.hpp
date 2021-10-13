@@ -132,7 +132,9 @@ class LfxNode : public RosNodeBase{
             {
                 if(intensity[idx]>=LdsSensorCfg::minIntensity){
                     f32 range=scan[idx]-LdsSensorCfg::sensorOffset_mm;
-                    f32 ang=idx*AngConversions::degToRad;
+                    f32 ang=pos.theta_rad+(((idx+180)%360)*AngConversions::degToRad);
+                    ang=fmod(ang+(2*M_PI),2*M_PI);
+                    //f32 ang=(idx*AngConversions::degToRad);
                     f32 x=pos.x_mm + (range*cos(ang));
                     f32 y=pos.y_mm + (range*sin(ang));
                     lfx_feats.points.push_back(Point2D(x,y));
@@ -308,7 +310,7 @@ class LfxNode : public RosNodeBase{
         pos.theta_rad =msg.theta;*/
         pos.x_mm = 0;
         pos.y_mm = 0;
-        pos.theta_rad =0;
+        pos.theta_rad =M_PI_2;
     }
 
     static void storeScan(const sensor_msgs::LaserScan& msg){

@@ -3,6 +3,9 @@
 #include "feat.hpp"
 #include <random>
 #include <algorithm>
+#include <iostream>
+
+using namespace std;
 
 struct ParticleFilterCfg{
     static const u16 numParticles{500};
@@ -19,7 +22,10 @@ ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         // sample the particles
         particles.reserve(particles_num);
         for(u16 i=0;i<particles_num;++i){
-            particles.push_back(RobotPos(rand() % world_x_boundary_mm,rand() % world_y_boundary_mm,(rand() % 360)*AngConversions::degToRad));
+            particles.push_back(RobotPos(
+                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm-RobotCfg::width_mm),
+                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm-RobotCfg::width_mm),
+                (rand() % 360)*AngConversions::degToRad));
         }
     }
 
@@ -36,7 +42,8 @@ void ParticleFilter::predict(const WheelVelocity& wheelVelocity){
         f32 l(dist_l(gen));
         f32 r(dist_r(gen));
         WheelVelocity sampled_vel(l,r);
-        odomEstimatePos(i,sampled_vel);
+        //odomEstimatePos(i,sampled_vel);
+        odomEstimatePos(i,wheelVelocity);
     }
 }
 
@@ -44,12 +51,13 @@ void ParticleFilter::update(
     vector<Point2D>& feat_corners,
     vector<Point2D>& feat_edges){
     auto weights(calcImpWeights(feat_corners,feat_edges));
-    resample(weights);
+    if(*max_element(weights.begin(),weights.end()))
+        resample(weights);
 }
 
 RobotPos ParticleFilter::getPosMean(){
     // density estimation using mean particle
-    f32 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
+    f64 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
 
     // particles
     for(auto& i:particles){
@@ -70,20 +78,35 @@ const vector<RobotPos>& ParticleFilter::getParticles(){
     return particles;
 }
 
-f32 ParticleFilter::calcParticleWeight(const RobotPos& pos,vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight){
+f32 ParticleFilter::calcParticleWeight(const RobotPos& pos,const vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight){
+    u16 idx=0;
+    vector<Point2D> globalFeats;
+    globalFeats.reserve(feats.size());
     for(auto&feat:feats){
         // transform the features to world coords
         // based on the particle pos
-        calcFeatGlobalPos(feat,pos);
+        /*cout<<"feat_idx= "<<idx++<<endl;
+        cout<<"feat_x_orig= "<<feat.x_mm<<endl;
+        cout<<"feat_y_orig= "<<feat.y_mm<<endl;*/
+        globalFeats.push_back(calcFeatGlobalPos(feat,pos));
+        /*cout<<"feat_x= "<<feat.x_mm<<endl;
+        cout<<"feat_y= "<<feat.y_mm<<endl;
+        cout<<"pos.x= "<<pos.x_mm<<endl;
+        cout<<"pos.y= "<<pos.y_mm<<endl;
+        cout<<"pos.yaw= "<<pos.theta_rad<<endl;*/
     }
-    unordered_map<u16,u16> associations=featAssociate(feats,landmarks);
+    unordered_map<u16,u16> associations=featAssociate(globalFeats,landmarks);
+    if(associations.size()<globalFeats.size())
+        return 0;
     for(auto&assoc:associations){
-        u16 landmars_idx=assoc.first;
-        u16 feat_idx=assoc.second;
+        u16 landmars_idx=assoc.second;
+        u16 feat_idx=assoc.first;
+        //cout<<"landmars_idx= "<<landmars_idx<<endl;
+        //cout<<"feat_idx= "<<feat_idx<<endl;
 
         // sample pdf using coords diff
-        f32 delta_x(landmarks[landmars_idx].x_mm-feats[feat_idx].x_mm);
-        f32 delta_y(landmarks[landmars_idx].y_mm-feats[feat_idx].y_mm);
+        f32 delta_x(landmarks[landmars_idx].x_mm-globalFeats[feat_idx].x_mm);
+        f32 delta_y(landmarks[landmars_idx].y_mm-globalFeats[feat_idx].y_mm);
 
         f32 nd1(normal_pdf(delta_x,0,meas_x_std));
         f32 nd2(normal_pdf(delta_y,0,meas_y_std));
@@ -97,11 +120,16 @@ vector<f32> ParticleFilter::calcImpWeights(
     vector<Point2D>& feat_corners,
     vector<Point2D>& feat_edges){
     vector<f32>ret;
-    const f32 max_ref_dist(numeric_limits<f32>::max());
+    /*for(auto&feat:feat_corners){
+        // transform the features to world coords
+        // based on the particle pos
+        cout<<"feat_x_orig= "<<feat.x_mm<<endl;
+        cout<<"feat_y_orig= "<<feat.y_mm<<endl;
+    }*/
     for(auto& p:particles){
         f32 weight=1;
         weight=calcParticleWeight(p,feat_corners,Landmarks::corners,weight);
-        weight=calcParticleWeight(p,feat_edges,Landmarks::edges,weight);
+        //weight=calcParticleWeight(p,feat_edges,Landmarks::edges,weight);
         ret.push_back(weight);
     }
     return ret;

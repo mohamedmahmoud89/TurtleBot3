@@ -2,6 +2,7 @@
 #define DISPLAY_NODE_HPP
 
 #include "nodeBase.hpp"
+#include "feat.hpp"
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose2D.h>
 #include <sensor_msgs/LaserScan.h>
@@ -15,6 +16,7 @@ class DisplayNode : public RosNodeBase{
             Lock l(featsMux);
             featPoints.header.stamp = ros::Time::now();
             rvizPointsPub.publish(featPoints);
+            featPoints.points.clear();
         }
 
         // lines visualization
@@ -58,6 +60,10 @@ class DisplayNode : public RosNodeBase{
             particles.header.stamp = ros::Time::now();
             rvizParticlesPub.publish(particles);
         }
+
+        // landmarks virusalization
+        landmarkPoints.header.stamp = ros::Time::now();
+        rvizLandmarksPub.publish(landmarkPoints);
     }
 
     static void processMclPosData(const geometry_msgs::Pose2D& msg){
@@ -106,11 +112,22 @@ class DisplayNode : public RosNodeBase{
         Lock l(featsCornerMux);
         featCorners.points.clear();
         featCorners.points.reserve(msg.poses.size());
+        RobotPos gpos;
+        {
+            Lock l2(globalPosMux);
+            gpos.x_mm=globalPos.pose.position.x;
+            gpos.y_mm=globalPos.pose.position.y;
+            gpos.theta_rad=2*acos(globalPos.pose.orientation.x);
+        }
         for(auto& pt:msg.poses){
             geometry_msgs::Point p;
             p.x=pt.position.x/100;
             p.y=pt.position.y/100;
             p.z=0.2;
+            Point2D temp(p.x,p.y);
+            Point2D ret=calcFeatGlobalPos(temp,gpos);
+            p.x=ret.x_mm;
+            p.y=ret.y_mm;
             featCorners.points.push_back(p);
         }
     }
@@ -136,7 +153,6 @@ class DisplayNode : public RosNodeBase{
             geometry_msgs::Pose p;
             p.position.x=pt.position.x/100;
             p.position.y=pt.position.y/100;
-            p.position.z=0.2;
             p.orientation.x=cos(pt.orientation.z/2);
             p.orientation.y=sin(pt.orientation.z/2);
             particles.poses.push_back(p);
@@ -155,6 +171,7 @@ public:
         rvizPointsPub(n.advertise<visualization_msgs::Marker>("rvizPoints", 1000)),
         rvizLinesPub(n.advertise<visualization_msgs::Marker>("rvizLines", 1000)),
         rvizCornersPub(n.advertise<visualization_msgs::Marker>("rvizCorners", 1000)),
+        rvizLandmarksPub(n.advertise<visualization_msgs::Marker>("rvizLandmarks", 1000)),
         rvizEdgesPub(n.advertise<visualization_msgs::Marker>("rvizEdges", 1000)),
         rvizPosPub(n.advertise<geometry_msgs::PoseStamped>("rvizPos", 1000)),
         rvizGlobalPosPub(n.advertise<geometry_msgs::PoseStamped>("rvizGlobalPos", 1000)),
@@ -171,6 +188,24 @@ public:
         featPoints.header.frame_id = "/map";
         featPoints.ns = "points";
         featPoints.id = 0;
+
+        landmarkPoints.action = visualization_msgs::Marker::ADD;
+        landmarkPoints.type = visualization_msgs::Marker::POINTS;
+        landmarkPoints.scale.x = 0.05;
+        landmarkPoints.scale.y = 0.05;
+        landmarkPoints.color.g = 1.0f;
+        landmarkPoints.color.a = 1.0;
+        landmarkPoints.pose.orientation.w = 1.0;
+        landmarkPoints.header.frame_id = "/map";
+        landmarkPoints.ns = "points";
+        landmarkPoints.id = 0;
+        landmarkPoints.points.reserve(Landmarks::corners.size());
+        for(auto& pt:Landmarks::corners){
+            geometry_msgs::Point p;
+            p.x=pt.x_mm/100;
+            p.y=pt.y_mm/100;
+            landmarkPoints.points.push_back(p);
+        }
 
         pos.header.frame_id = "/map";
 
@@ -227,6 +262,8 @@ private:
     Publisher rvizPosPub;
     Publisher rvizParticlesPub;
     Publisher rvizGlobalPosPub;
+    Publisher rvizLandmarksPub;
+    visualization_msgs::Marker landmarkPoints;
     static constexpr u16 rate_hz=10;
     static mutex posMux;
     static mutex globalPosMux;

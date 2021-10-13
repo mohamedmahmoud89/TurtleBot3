@@ -41,10 +41,17 @@ struct WheelVelocity{
 };
 
 struct RobotPos{
+    RobotPos():x_mm(0),y_mm(0),theta_rad(0){}
     RobotPos(const f64& x,const f64& y,const f64& theta):
         x_mm(x),
         y_mm(y),
         theta_rad(theta){}
+    RobotPos& operator=(const RobotPos& rhs){
+        x_mm=rhs.x_mm;
+        y_mm=rhs.y_mm;
+        theta_rad=rhs.theta_rad;
+        return *this;
+    }
     f64 x_mm{0};
     f64 y_mm{0};
     f64 theta_rad{0};
