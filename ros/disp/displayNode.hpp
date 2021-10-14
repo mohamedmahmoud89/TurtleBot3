@@ -31,6 +31,7 @@ class DisplayNode : public RosNodeBase{
             Lock l(featsEdgeMux);
             featEdges.header.stamp = ros::Time::now();
             rvizEdgesPub.publish(featEdges);
+            featEdges.points.clear();
         }
 
         // corners visualization
@@ -38,6 +39,7 @@ class DisplayNode : public RosNodeBase{
             Lock l(featsCornerMux);
             featCorners.header.stamp = ros::Time::now();
             rvizCornersPub.publish(featCorners);
+            featCorners.points.clear();
         }
 
         // pos visualization
@@ -51,6 +53,10 @@ class DisplayNode : public RosNodeBase{
         {
             Lock mux(globalPosMux);
             globalPos.header.stamp = ros::Time::now();
+            globalPos.pose.position.x=globalRobotPos.x_mm/100;
+            globalPos.pose.position.y=globalRobotPos.y_mm/100;
+            globalPos.pose.orientation.x=cos(globalRobotPos.theta_rad/2);
+            globalPos.pose.orientation.y=sin(globalRobotPos.theta_rad/2);
             rvizGlobalPosPub.publish(globalPos);
         }
 
@@ -68,10 +74,9 @@ class DisplayNode : public RosNodeBase{
 
     static void processMclPosData(const geometry_msgs::Pose2D& msg){
         Lock mux(globalPosMux);
-        globalPos.pose.position.x = msg.x/100;
-        globalPos.pose.position.y = msg.y/100;
-        globalPos.pose.orientation.x=cos(msg.theta/2);
-        globalPos.pose.orientation.y=sin(msg.theta/2);
+        globalRobotPos.x_mm = msg.x;
+        globalRobotPos.y_mm = msg.y;
+        globalRobotPos.theta_rad=msg.theta;
     }
 
     static void processOdomData(const geometry_msgs::Pose2D& msg){
@@ -115,19 +120,16 @@ class DisplayNode : public RosNodeBase{
         RobotPos gpos;
         {
             Lock l2(globalPosMux);
-            gpos.x_mm=globalPos.pose.position.x;
-            gpos.y_mm=globalPos.pose.position.y;
-            gpos.theta_rad=2*acos(globalPos.pose.orientation.x);
+            gpos = globalRobotPos;
         }
         for(auto& pt:msg.poses){
             geometry_msgs::Point p;
-            p.x=pt.position.x/100;
-            p.y=pt.position.y/100;
-            p.z=0.2;
+            p.x=pt.position.x;
+            p.y=pt.position.y;
             Point2D temp(p.x,p.y);
             Point2D ret=calcFeatGlobalPos(temp,gpos);
-            p.x=ret.x_mm;
-            p.y=ret.y_mm;
+            p.x=ret.x_mm/100;
+            p.y=ret.y_mm/100;
             featCorners.points.push_back(p);
         }
     }
@@ -136,11 +138,19 @@ class DisplayNode : public RosNodeBase{
         Lock l(featsEdgeMux);
         featEdges.points.clear();
         featEdges.points.reserve(msg.poses.size());
+        RobotPos gpos;
+        {
+            Lock l2(globalPosMux);
+            gpos = globalRobotPos;
+        }
         for(auto& pt:msg.poses){
             geometry_msgs::Point p;
-            p.x=pt.position.x/100;
-            p.y=pt.position.y/100;
-            p.z=0.2;
+            p.x=pt.position.x;
+            p.y=pt.position.y;
+            Point2D temp(p.x,p.y);
+            Point2D ret=calcFeatGlobalPos(temp,gpos);
+            p.x=ret.x_mm/100;
+            p.y=ret.y_mm/100;
             featEdges.points.push_back(p);
         }
     }
@@ -266,6 +276,7 @@ private:
     visualization_msgs::Marker landmarkPoints;
     static constexpr u16 rate_hz=10;
     static mutex posMux;
+    static RobotPos globalRobotPos;
     static mutex globalPosMux;
     static mutex featsMux;
     static mutex featsLineMux;
@@ -295,5 +306,6 @@ mutex DisplayNode::featsLineMux;
 mutex DisplayNode::featsCornerMux;
 mutex DisplayNode::featsEdgeMux;
 mutex DisplayNode::mclParticlesMux;
+RobotPos DisplayNode::globalRobotPos;
 
 #endif

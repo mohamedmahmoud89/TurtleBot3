@@ -8,7 +8,7 @@
 using namespace std;
 
 struct ParticleFilterCfg{
-    static const u16 numParticles{500};
+    static const u16 resamplingDebounce{100};
 };
 
 ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
@@ -18,13 +18,38 @@ ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         meas_y_std(inputs.meas_y_std),
         particles_num(inputs.particles_num),
         world_x_boundary_mm(inputs.world_x_boundary_mm),
-        world_y_boundary_mm(inputs.world_y_boundary_mm){
+        world_y_boundary_mm(inputs.world_y_boundary_mm),
+        resampling_debounce(ParticleFilterCfg::resamplingDebounce){
         // sample the particles
         particles.reserve(particles_num);
-        for(u16 i=0;i<particles_num;++i){
+        for(u16 i=0;i<particles_num/5;++i){
             particles.push_back(RobotPos(
-                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm-RobotCfg::width_mm),
-                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm-RobotCfg::width_mm),
+                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
+                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+                (rand() % 360)*AngConversions::degToRad));
+        }
+        for(u16 i=0;i<particles_num/5;++i){
+            particles.push_back(RobotPos(
+                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
+                (world_y_boundary_mm/2)+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+                (rand() % 360)*AngConversions::degToRad));
+        }
+        for(u16 i=0;i<particles_num/5;++i){
+            particles.push_back(RobotPos(
+                (world_x_boundary_mm/3)+rand() % (world_x_boundary_mm/3),
+                (world_y_boundary_mm/2)+RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm),
+                (rand() % 360)*AngConversions::degToRad));
+        }
+        for(u16 i=0;i<particles_num/5;++i){
+            particles.push_back(RobotPos(
+                (world_x_boundary_mm*2/3)+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
+                world_y_boundary_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+                (rand() % 360)*AngConversions::degToRad));
+        }
+        for(u16 i=0;i<particles_num/5;++i){
+            particles.push_back(RobotPos(
+                (world_x_boundary_mm*2/3)+RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
+                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
                 (rand() % 360)*AngConversions::degToRad));
         }
     }
@@ -42,17 +67,18 @@ void ParticleFilter::predict(const WheelVelocity& wheelVelocity){
         f32 l(dist_l(gen));
         f32 r(dist_r(gen));
         WheelVelocity sampled_vel(l,r);
-        //odomEstimatePos(i,sampled_vel);
-        odomEstimatePos(i,wheelVelocity);
+        odomEstimatePos(i,sampled_vel);
     }
 }
 
 void ParticleFilter::update(
     vector<Point2D>& feat_corners,
     vector<Point2D>& feat_edges){
-    auto weights(calcImpWeights(feat_corners,feat_edges));
-    if(*max_element(weights.begin(),weights.end()))
-        resample(weights);
+    auto imp_weights=calcImpWeights(feat_corners,feat_edges);
+    //if(*max_element(imp_weights.begin(),imp_weights.end()))
+    {
+        resample(imp_weights);
+    }
 }
 
 RobotPos ParticleFilter::getPosMean(){
@@ -79,30 +105,17 @@ const vector<RobotPos>& ParticleFilter::getParticles(){
 }
 
 f32 ParticleFilter::calcParticleWeight(const RobotPos& pos,const vector<Point2D>&feats,const vector<Point2D>&landmarks,f32 weight){
-    u16 idx=0;
     vector<Point2D> globalFeats;
     globalFeats.reserve(feats.size());
     for(auto&feat:feats){
         // transform the features to world coords
         // based on the particle pos
-        /*cout<<"feat_idx= "<<idx++<<endl;
-        cout<<"feat_x_orig= "<<feat.x_mm<<endl;
-        cout<<"feat_y_orig= "<<feat.y_mm<<endl;*/
         globalFeats.push_back(calcFeatGlobalPos(feat,pos));
-        /*cout<<"feat_x= "<<feat.x_mm<<endl;
-        cout<<"feat_y= "<<feat.y_mm<<endl;
-        cout<<"pos.x= "<<pos.x_mm<<endl;
-        cout<<"pos.y= "<<pos.y_mm<<endl;
-        cout<<"pos.yaw= "<<pos.theta_rad<<endl;*/
     }
     unordered_map<u16,u16> associations=featAssociate(globalFeats,landmarks);
-    if(associations.size()<globalFeats.size())
-        return 0;
     for(auto&assoc:associations){
         u16 landmars_idx=assoc.second;
         u16 feat_idx=assoc.first;
-        //cout<<"landmars_idx= "<<landmars_idx<<endl;
-        //cout<<"feat_idx= "<<feat_idx<<endl;
 
         // sample pdf using coords diff
         f32 delta_x(landmarks[landmars_idx].x_mm-globalFeats[feat_idx].x_mm);
@@ -120,16 +133,11 @@ vector<f32> ParticleFilter::calcImpWeights(
     vector<Point2D>& feat_corners,
     vector<Point2D>& feat_edges){
     vector<f32>ret;
-    /*for(auto&feat:feat_corners){
-        // transform the features to world coords
-        // based on the particle pos
-        cout<<"feat_x_orig= "<<feat.x_mm<<endl;
-        cout<<"feat_y_orig= "<<feat.y_mm<<endl;
-    }*/
     for(auto& p:particles){
         f32 weight=1;
-        weight=calcParticleWeight(p,feat_corners,Landmarks::corners,weight);
-        //weight=calcParticleWeight(p,feat_edges,Landmarks::edges,weight);
+        weight*=calcParticleWeight(p,feat_corners,Landmarks::corners,weight);
+        weight*=calcParticleWeight(p,feat_edges,Landmarks::edges,weight);
+        
         ret.push_back(weight);
     }
     return ret;
@@ -162,15 +170,23 @@ void ParticleFilter::resample(const vector<f32>& weights){
             idx=(idx+1)%N;
         }
         // sample new particles around the one of chosen index
-        /*random_device rd;
-        default_random_engine gen(rd());
-        normal_distribution<f32> dist_x(particles[idx]->X(),20.0);
-        normal_distribution<f32> dist_y(particles[idx]->Y(),20.0);
-        normal_distribution<f32> dist_yaw(particles[idx]->Yaw(),((2.0 / 180.0) * M_PI));
-        f32 x(dist_x(gen));
-        f32 y(dist_y(gen));
-        f32 yaw(dist_yaw(gen));*/
-        resampled.push_back(particles[idx]);
+        if(!resampling_debounce){
+            random_device rd;
+            default_random_engine gen(rd());
+            normal_distribution<f32> dist_x(particles[idx].x_mm,20.0);
+            normal_distribution<f32> dist_y(particles[idx].y_mm,20.0);
+            normal_distribution<f32> dist_yaw(particles[idx].theta_rad,2*AngConversions::degToRad);
+            f32 x(dist_x(gen));
+            f32 y(dist_y(gen));
+            f32 yaw(dist_yaw(gen));
+            resampled.push_back(RobotPos(x,y,yaw));
+            resampling_debounce=ParticleFilterCfg::resamplingDebounce;
+        }
+        else
+        {
+            resampled.push_back(particles[idx]);   
+        }
+        resampling_debounce--;
     }
     particles.clear();
     particles=resampled;

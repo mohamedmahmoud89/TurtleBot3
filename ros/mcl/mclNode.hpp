@@ -14,8 +14,8 @@ using namespace std;
 struct MclNodeCfg{
     static constexpr f32 ctrl_motion_std{0.1};
     static constexpr f32 ctrl_turn_std{0.05};
-    static constexpr f32 meas_x_std{10};
-    static constexpr f32 meas_y_std{10};
+    static constexpr f32 meas_x_std{100};
+    static constexpr f32 meas_y_std{100};
     static constexpr u16 particles_num{1000};
     static constexpr u16 world_x_mm{880};
     static constexpr u16 world_y_mm{580};
@@ -40,19 +40,10 @@ class MclNode : public RosNodeBase{
             Lock l(edgesMux);
             edges_copy=featEdges;
         }
-        if(velReceived)
-            pf.predict(vel_copy);
-        {
-            Lock l(flag2Mux);
-            velReceived=false;
-        }
-        if(featsReceived&&(vel_copy.left_rpm||vel_copy.right_rpm)&&(corners_copy.size()||edges_copy.size())){
-            pf.update(corners_copy,edges_copy);
-        }
 
-        {
-            Lock l2(flagMux);
-            featsReceived=false;
+        pf.predict(vel_copy);
+        if((vel_copy.left_rpm&&vel_copy.right_rpm)&&(corners_copy.size()||edges_copy.size())){
+            pf.update(corners_copy,edges_copy);
         }
         publish();
     }
@@ -86,11 +77,6 @@ class MclNode : public RosNodeBase{
         for(auto& pt:msg.poses){
             featCorners.push_back(Point2D(pt.position.x,pt.position.y));
         }
-
-        {
-            Lock l2(flagMux);
-            featsReceived=true;
-        }
     }
 
     static void storeEdges(const geometry_msgs::PoseArray& msg){
@@ -106,23 +92,11 @@ class MclNode : public RosNodeBase{
         Lock l(velMux);
         vel.left_rpm=msg.data[0];
         vel.right_rpm=msg.data[1];
-        {
-            Lock l2(flag2Mux);
-            velReceived=true;
-        }
+        //pf.predict(vel);
     }
 public:
     MclNode():
         RosNodeBase("mcl"),
-        pf(
-            ParticleFilterInitList(
-                MclNodeCfg::ctrl_motion_std,
-                MclNodeCfg::ctrl_turn_std,
-                MclNodeCfg::meas_x_std,
-                MclNodeCfg::meas_y_std,
-                MclNodeCfg::particles_num,
-                MclNodeCfg::world_x_mm,
-                MclNodeCfg::world_y_mm)),
         ctrlDataSub(n.subscribe("odom",100,storeVel)),
         featCornerSub(n.subscribe("featCorners",100,storeCorners)),
         featEdgeSub(n.subscribe("featEdges",100,storeEdges)),
@@ -134,17 +108,13 @@ private:
     Subscriber featEdgeSub;
     Publisher globalPosPub;
     Publisher particlesPub;
-    ParticleFilter pf;
+    static ParticleFilter pf;
     static WheelVelocity vel;
     static vector<Point2D>featCorners;
     static vector<Point2D>featEdges;
     static mutex velMux;
     static mutex cornersMux;
     static mutex edgesMux;
-    static mutex flagMux;
-    static mutex flag2Mux;
-    static bool featsReceived;
-    static bool velReceived;
 };
 
 WheelVelocity MclNode::vel(0,0);
@@ -153,9 +123,14 @@ vector<Point2D>MclNode::featEdges;
 mutex MclNode::velMux;
 mutex MclNode::cornersMux;
 mutex MclNode::edgesMux;
-mutex MclNode::flagMux;
-mutex MclNode::flag2Mux;
-bool MclNode::featsReceived=false;
-bool MclNode::velReceived=false;
+ParticleFilter MclNode::pf(
+            ParticleFilterInitList(
+                MclNodeCfg::ctrl_motion_std,
+                MclNodeCfg::ctrl_turn_std,
+                MclNodeCfg::meas_x_std,
+                MclNodeCfg::meas_y_std,
+                MclNodeCfg::particles_num,
+                MclNodeCfg::world_x_mm,
+                MclNodeCfg::world_y_mm));
 
 #endif 

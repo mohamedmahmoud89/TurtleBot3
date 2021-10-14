@@ -7,7 +7,7 @@
 using namespace std; 
 
 struct FeatAssociationCfg{
-    static constexpr f32 max_ref_dist_mm{50};
+    static constexpr f32 max_ref_dist_mm{5000};
 };
 
 inline Point2D calcFeatGlobalPos(const Point2D& feat,const RobotPos& coord){

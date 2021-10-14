@@ -14,6 +14,7 @@ struct LfxCfg{
     static const u16 max_dist_adj_pts_mm{10};
     static const u16 min_pts_for_line_fitting{5};
     static const u16 min_pts_gap_between_lines{10};
+    static const u16 max_dist_intersect_line_line_mm{200};
 };
 
 class LfxNode : public RosNodeBase{
@@ -33,9 +34,13 @@ class LfxNode : public RosNodeBase{
             loc_intensity=intensity;
         }
 
-        extractFeats(loc_pos,loc_scan,loc_intensity,feats);
-
+        /*if(!consumed){
+            extractFeats(loc_pos,loc_scan,loc_intensity,feats);
+        } */
+        extractFeats(loc_pos,loc_scan,loc_intensity,feats) ;
         publish(feats);
+        consumed=true;
+        
     }
 
     void publish(const LfxFeats& feats){
@@ -187,7 +192,7 @@ class LfxNode : public RosNodeBase{
             ang=fmod(ang+(2*M_PI),2*M_PI);
 
             // check whether the 2 lines form corner/edge
-            if(dist<100){
+            if(dist<LfxCfg::max_dist_intersect_line_line_mm){
                 if((ang>70*AngConversions::degToRad) && (ang<110*AngConversions::degToRad)){
                     // calculate intersections
                     Point2D t;
@@ -319,6 +324,7 @@ class LfxNode : public RosNodeBase{
             scan[idx]=static_cast<u16>(msg.ranges[idx]);
             intensity[idx]=static_cast<u16>(msg.intensities[idx]);
         }
+        consumed=false;
     }
 public:
     LfxNode():
@@ -341,6 +347,7 @@ private:
     static vector<u16> intensity; 
     static mutex posMux;
     static mutex scanMux;
+    static bool consumed;
 };
 
 RobotPos LfxNode::pos(0,0,M_PI_2);
@@ -348,5 +355,6 @@ vector<u16> LfxNode::scan(360,0);
 vector<u16> LfxNode::intensity(360,0);
 mutex LfxNode::posMux;
 mutex LfxNode::scanMux;
+bool LfxNode::consumed=true;
 
 #endif
