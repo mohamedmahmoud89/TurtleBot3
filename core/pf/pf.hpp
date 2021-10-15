@@ -56,7 +56,6 @@ private:
         f32 meas_x_std;
         f32 meas_y_std;
         u16 particles_num;
-        si16 resampling_debounce;
         u16 world_x_boundary_mm;
         u16 world_y_boundary_mm;
 };

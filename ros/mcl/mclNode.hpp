@@ -14,9 +14,9 @@ using namespace std;
 struct MclNodeCfg{
     static constexpr f32 ctrl_motion_std{0.1};
     static constexpr f32 ctrl_turn_std{0.05};
-    static constexpr f32 meas_x_std{100};
-    static constexpr f32 meas_y_std{100};
-    static constexpr u16 particles_num{1000};
+    static constexpr f32 meas_x_std{50};
+    static constexpr f32 meas_y_std{50};
+    static constexpr u16 particles_num{5000};
     static constexpr u16 world_x_mm{880};
     static constexpr u16 world_y_mm{580};
 };
@@ -42,7 +42,7 @@ class MclNode : public RosNodeBase{
         }
 
         pf.predict(vel_copy);
-        if((vel_copy.left_rpm&&vel_copy.right_rpm)&&(corners_copy.size()||edges_copy.size())){
+        if((vel_copy.left_rpm&&vel_copy.right_rpm)&&(corners_copy.size()+edges_copy.size()>=2)){
             pf.update(corners_copy,edges_copy);
         }
         publish();

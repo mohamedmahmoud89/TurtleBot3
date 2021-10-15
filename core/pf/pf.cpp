@@ -7,10 +7,6 @@
 
 using namespace std;
 
-struct ParticleFilterCfg{
-    static const u16 resamplingDebounce{100};
-};
-
 ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         ctrl_motion_std(inputs.ctrl_motion_std),
         ctrl_turn_std(inputs.ctrl_turn_std),
@@ -18,8 +14,7 @@ ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         meas_y_std(inputs.meas_y_std),
         particles_num(inputs.particles_num),
         world_x_boundary_mm(inputs.world_x_boundary_mm),
-        world_y_boundary_mm(inputs.world_y_boundary_mm),
-        resampling_debounce(ParticleFilterCfg::resamplingDebounce){
+        world_y_boundary_mm(inputs.world_y_boundary_mm){
         // sample the particles
         particles.reserve(particles_num);
         for(u16 i=0;i<particles_num/5;++i){
@@ -75,10 +70,7 @@ void ParticleFilter::update(
     vector<Point2D>& feat_corners,
     vector<Point2D>& feat_edges){
     auto imp_weights=calcImpWeights(feat_corners,feat_edges);
-    //if(*max_element(imp_weights.begin(),imp_weights.end()))
-    {
-        resample(imp_weights);
-    }
+    resample(imp_weights);
 }
 
 RobotPos ParticleFilter::getPosMean(){
@@ -170,23 +162,15 @@ void ParticleFilter::resample(const vector<f32>& weights){
             idx=(idx+1)%N;
         }
         // sample new particles around the one of chosen index
-        if(!resampling_debounce){
-            random_device rd;
-            default_random_engine gen(rd());
-            normal_distribution<f32> dist_x(particles[idx].x_mm,20.0);
-            normal_distribution<f32> dist_y(particles[idx].y_mm,20.0);
-            normal_distribution<f32> dist_yaw(particles[idx].theta_rad,2*AngConversions::degToRad);
-            f32 x(dist_x(gen));
-            f32 y(dist_y(gen));
-            f32 yaw(dist_yaw(gen));
-            resampled.push_back(RobotPos(x,y,yaw));
-            resampling_debounce=ParticleFilterCfg::resamplingDebounce;
-        }
-        else
-        {
-            resampled.push_back(particles[idx]);   
-        }
-        resampling_debounce--;
+        random_device rd;
+        default_random_engine gen(rd());
+        normal_distribution<f32> dist_x(particles[idx].x_mm,20.0);
+        normal_distribution<f32> dist_y(particles[idx].y_mm,20.0);
+        normal_distribution<f32> dist_yaw(particles[idx].theta_rad,2*AngConversions::degToRad);
+        f32 x(dist_x(gen));
+        f32 y(dist_y(gen));
+        f32 yaw(dist_yaw(gen));
+        resampled.push_back(RobotPos(x,y,yaw));
     }
     particles.clear();
     particles=resampled;

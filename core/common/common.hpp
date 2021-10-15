@@ -31,7 +31,7 @@ struct LdsSensorCfg{
     static const u16 minDepth_mm{120};
     static const u16 maxDepth_mm{1000};
     static const u16 sensorOffset_mm{20};
-    static const u16 minIntensity{1000};
+    static const u16 minIntensity{500};
 };
 
 struct WheelVelocity{
