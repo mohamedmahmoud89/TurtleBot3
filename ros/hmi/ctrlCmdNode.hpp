@@ -13,6 +13,7 @@ class CtrlCmdNode : public RosNodeBase{
          * This is a message object. You stuff it with data, and then publish it.
          */
         std_msgs::String msg;
+        std_msgs::String reset_msg;
         string cmd;
         cout<<"Enter Command:"<<endl;
         
@@ -24,19 +25,26 @@ class CtrlCmdNode : public RosNodeBase{
         if(cmd=="6")msg.data="right";
         if(cmd=="+")msg.data="up";
         if(cmd=="-")msg.data="down";
+        if(cmd=="r")reset_msg.data="reset";
 
         if(msg.data.size()){
             ROS_INFO("%s", msg.data.c_str());
             ctrlCmdDataPub.publish(msg);
         }
+        if(reset_msg.data.size()){
+            ROS_INFO("%s", reset_msg.data.c_str());
+            resetDataPub.publish(reset_msg);
+        }
     }
 public:
     CtrlCmdNode():
         RosNodeBase("hmi"),
-        ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmdCaptured", 1000)){}
+        ctrlCmdDataPub(n.advertise<std_msgs::String>("ctrlCmdCaptured", 1000)),
+        resetDataPub(n.advertise<std_msgs::String>("resetCmd", 1000)){}
 
 private:
     Publisher ctrlCmdDataPub;
+    Publisher resetDataPub;
 };
 
 #endif

@@ -7,6 +7,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseArray.h>
 #include <std_msgs/Int16MultiArray.h>
+#include <std_msgs/String.h>
 #include <vector>
 
 using namespace std;
@@ -39,6 +40,11 @@ class MclNode : public RosNodeBase{
         {
             Lock l(edgesMux);
             edges_copy=featEdges;
+        }
+
+        if(reset_filter){
+            pf.reset();
+            reset_filter=false;
         }
 
         pf.predict(vel_copy);
@@ -92,7 +98,11 @@ class MclNode : public RosNodeBase{
         Lock l(velMux);
         vel.left_rpm=msg.data[0];
         vel.right_rpm=msg.data[1];
-        //pf.predict(vel);
+    }
+
+    static void resetFilter(const std_msgs::String& msg){
+        if(msg.data=="reset")
+            reset_filter=true;
     }
 public:
     MclNode():
@@ -100,12 +110,14 @@ public:
         ctrlDataSub(n.subscribe("odom",100,storeVel)),
         featCornerSub(n.subscribe("featCorners",100,storeCorners)),
         featEdgeSub(n.subscribe("featEdges",100,storeEdges)),
+        hmiSub(n.subscribe("resetCmd",100,resetFilter)),
         globalPosPub(n.advertise<geometry_msgs::Pose2D>("globalPos", 1000)),
         particlesPub(n.advertise<geometry_msgs::PoseArray>("particles", 1000)){}
 private:
     Subscriber ctrlDataSub;
     Subscriber featCornerSub;
     Subscriber featEdgeSub;
+    Subscriber hmiSub;
     Publisher globalPosPub;
     Publisher particlesPub;
     static ParticleFilter pf;
@@ -115,6 +127,7 @@ private:
     static mutex velMux;
     static mutex cornersMux;
     static mutex edgesMux;
+    static bool reset_filter;
 };
 
 WheelVelocity MclNode::vel(0,0);
@@ -132,5 +145,5 @@ ParticleFilter MclNode::pf(
                 MclNodeCfg::particles_num,
                 MclNodeCfg::world_x_mm,
                 MclNodeCfg::world_y_mm));
-
+bool MclNode::reset_filter=false;
 #endif 

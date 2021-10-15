@@ -15,39 +15,45 @@ ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         particles_num(inputs.particles_num),
         world_x_boundary_mm(inputs.world_x_boundary_mm),
         world_y_boundary_mm(inputs.world_y_boundary_mm){
-        // sample the particles
-        particles.reserve(particles_num);
-        for(u16 i=0;i<particles_num/5;++i){
-            particles.push_back(RobotPos(
-                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
-                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-                (rand() % 360)*AngConversions::degToRad));
-        }
-        for(u16 i=0;i<particles_num/5;++i){
-            particles.push_back(RobotPos(
-                RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
-                (world_y_boundary_mm/2)+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-                (rand() % 360)*AngConversions::degToRad));
-        }
-        for(u16 i=0;i<particles_num/5;++i){
-            particles.push_back(RobotPos(
-                (world_x_boundary_mm/3)+rand() % (world_x_boundary_mm/3),
-                (world_y_boundary_mm/2)+RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm),
-                (rand() % 360)*AngConversions::degToRad));
-        }
-        for(u16 i=0;i<particles_num/5;++i){
-            particles.push_back(RobotPos(
-                (world_x_boundary_mm*2/3)+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
-                world_y_boundary_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-                (rand() % 360)*AngConversions::degToRad));
-        }
-        for(u16 i=0;i<particles_num/5;++i){
-            particles.push_back(RobotPos(
-                (world_x_boundary_mm*2/3)+RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
-                RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-                (rand() % 360)*AngConversions::degToRad));
-        }
+        // sample the particles uniformly over the state space
+        // note: customized to the current world
+        reset();   
     }
+
+void ParticleFilter::reset(){
+    particles.clear();
+    particles.reserve(particles_num);
+    for(u16 i=0;i<particles_num/5;++i){
+        particles.push_back(RobotPos(
+            RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
+            RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+            (rand() % 360)*AngConversions::degToRad));
+    }
+    for(u16 i=0;i<particles_num/5;++i){
+        particles.push_back(RobotPos(
+            RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
+            (world_y_boundary_mm/2)+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+            (rand() % 360)*AngConversions::degToRad));
+    }
+    for(u16 i=0;i<particles_num/5;++i){
+        particles.push_back(RobotPos(
+            (world_x_boundary_mm/3)+rand() % (world_x_boundary_mm/3),
+            (world_y_boundary_mm/2)+RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm),
+            (rand() % 360)*AngConversions::degToRad));
+    }
+    for(u16 i=0;i<particles_num/5;++i){
+        particles.push_back(RobotPos(
+            (world_x_boundary_mm*2/3)+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
+            world_y_boundary_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+            (rand() % 360)*AngConversions::degToRad));
+    }
+    for(u16 i=0;i<particles_num/5;++i){
+        particles.push_back(RobotPos(
+            (world_x_boundary_mm*2/3)+RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
+            RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+            (rand() % 360)*AngConversions::degToRad));
+    }
+}
 
 void ParticleFilter::predict(const WheelVelocity& wheelVelocity){
     pair<f32,f32> ctrl_std(computeSigmaCtrl(wheelVelocity));
