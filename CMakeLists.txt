@@ -35,6 +35,7 @@ include_directories(
   core/ekf
   core/feat
   core/pf
+  core/gs
 )
 
 ## Declare a C++ library

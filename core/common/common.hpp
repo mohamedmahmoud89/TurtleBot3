@@ -3,6 +3,8 @@
 
 #include <mutex>
 #include <vector>
+#include <unordered_map>
+#include <list>
 
 using namespace std;
 
@@ -60,6 +62,30 @@ struct RobotPos{
 struct Landmarks{
     static const vector<Point2D>corners;
     static const vector<Point2D>edges;
+};
+
+struct GraphNode{
+    GraphNode():x(0),y(0){}
+    GraphNode(const u16 arg1,const u16 arg2):x(arg1),y(arg2){}
+    u16 x;
+    u16 y;
+
+    bool operator==(const GraphNode& rhs) const {
+        return (rhs.x==x)&&(rhs.y==y);
+    }
+};
+
+// applying the Cantor pairing function for the node's x and y
+struct hashFunc{
+    u16 operator()(const GraphNode& node) const {
+        return (node.x + node.y) * (node.x + node.y + 1) / 2 + node.x;
+    };
+};
+
+using GraphNodeList=unordered_map<GraphNode,vector<GraphNode>,hashFunc>;
+
+struct MazeGraph{
+    static const GraphNodeList nodes;
 };
 
 struct AngConversions{
