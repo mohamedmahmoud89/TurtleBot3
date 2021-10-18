@@ -59,6 +59,7 @@ add_executable(lfx_node ros/lfx/lfxMain.cpp)
 add_executable(mon_node ros/monitor/monitorMain.cpp)
 add_executable(disp_node ros/disp/displayMain.cpp core/common/common.cpp)
 add_executable(mcl_node ros/mcl/mclMain.cpp core/pf/pf.cpp core/common/common.cpp)
+add_executable(pp_node ros/pp/ppMain.cpp core/common/common.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(
@@ -95,5 +96,9 @@ add_executable(mcl_node ros/mcl/mclMain.cpp core/pf/pf.cpp core/common/common.cp
  )
  target_link_libraries(
    mcl_node
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(
+   pp_node
    ${catkin_LIBRARIES}
  )

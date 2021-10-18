@@ -19,27 +19,19 @@ struct LfxCfg{
 
 class LfxNode : public RosNodeBase{
     void update() override{
-        RobotPos loc_pos(0,0,0);
+        RobotPos loc_pos(0,0,M_PI_2);
         vector<u16> loc_scan;
         vector<u16> loc_intensity;
         LfxFeats feats;
-        
-        {
-            Lock mux(posMux);
-            loc_pos=pos;
-        }
+
         {
             Lock mux(scanMux);
             loc_scan=scan;
             loc_intensity=intensity;
         }
 
-        /*if(!consumed){
-            extractFeats(loc_pos,loc_scan,loc_intensity,feats);
-        } */
         extractFeats(loc_pos,loc_scan,loc_intensity,feats) ;
         publish(feats);
-        consumed=true;
         
     }
 
@@ -308,53 +300,34 @@ class LfxNode : public RosNodeBase{
         }
     }
 
-    static void storePos(const geometry_msgs::Pose2D& msg){
-        Lock mux(posMux);
-        /*pos.x_mm = msg.x;
-        pos.y_mm = msg.y;
-        pos.theta_rad =msg.theta;*/
-        pos.x_mm = 0;
-        pos.y_mm = 0;
-        pos.theta_rad =M_PI_2;
-    }
-
     static void storeScan(const sensor_msgs::LaserScan& msg){
         Lock mux(scanMux);
         for(u16 idx=0;idx<msg.ranges.size();idx++){
             scan[idx]=static_cast<u16>(msg.ranges[idx]);
             intensity[idx]=static_cast<u16>(msg.intensities[idx]);
         }
-        consumed=false;
     }
 public:
     LfxNode():
         RosNodeBase("lfx"),
-        robotPosSub(n.subscribe("robotPos",100,storePos)),
         ldsScanSub(n.subscribe("ldsScan",100,storeScan)),
         featPtPub(n.advertise<geometry_msgs::PoseArray>("featPoints", 1000)),
         featCornerPub(n.advertise<geometry_msgs::PoseArray>("featCorners", 1000)),
         featEdgePub(n.advertise<geometry_msgs::PoseArray>("featEdges", 1000)),
         featLnPub(n.advertise<geometry_msgs::PoseArray>("featLines", 1000)){}
 private:
-    Subscriber robotPosSub;
     Subscriber ldsScanSub;
     Publisher featPtPub;
     Publisher featLnPub;
     Publisher featCornerPub;
     Publisher featEdgePub;
-    static RobotPos pos;
     static vector<u16> scan; 
     static vector<u16> intensity; 
-    static mutex posMux;
     static mutex scanMux;
-    static bool consumed;
 };
 
-RobotPos LfxNode::pos(0,0,M_PI_2);
 vector<u16> LfxNode::scan(360,0);
 vector<u16> LfxNode::intensity(360,0);
-mutex LfxNode::posMux;
 mutex LfxNode::scanMux;
-bool LfxNode::consumed=true;
 
 #endif
