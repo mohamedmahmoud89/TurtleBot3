@@ -81,25 +81,6 @@ void ParticleFilter::update(
     resample(imp_weights);
 }
 
-/*RobotPos ParticleFilter::getPosMean(){
-    // density estimation using mean particle
-    f64 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
-
-    // particles
-    for(auto& i:particles){
-        mean_x+=i.x_mm;
-        mean_y+=i.y_mm;
-        mean_cos=cos(i.theta_rad);
-        mean_sin=sin(i.theta_rad);
-    }
-
-    // mean
-    auto sz(particles.size());
-    mean_sin/=sz;
-    mean_cos/=sz;
-    return RobotPos(mean_x/sz,mean_y/sz,atan2(mean_sin,mean_cos));
-}*/
-
 void ParticleFilter::getPosDensityParams(RobotPos& mean,RobotPos& cov){
     // density estimation using mean particle
     f64 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
@@ -138,6 +119,8 @@ void ParticleFilter::getPosDensityParams(RobotPos& mean,RobotPos& cov){
     auto eigenvals=eigensolver.eigenvalues();
     f32 x(sqrt(eigenvals(1)));
     f32 y(sqrt(eigenvals(0)));
+    cov.x_mm=x;
+    cov.y_mm=y;
 }
 
 const vector<RobotPos>& ParticleFilter::getParticles(){

@@ -69,6 +69,7 @@ class MclNode : public RosNodeBase{
 
         if(cov.x_mm<30&&cov.y_mm<30)
             locStatMsg.data=true;
+        
         locStatPub.publish(locStatMsg);
         
         // particles

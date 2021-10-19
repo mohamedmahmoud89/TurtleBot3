@@ -30,9 +30,10 @@ class PpNode : public RosNodeBase{
                 static_cast<u16>(globalPos.x_mm/PpNodeCfg::unit_maze_cell_length_mm),
                 static_cast<u16>(globalPos.y_mm/PpNodeCfg::unit_maze_cell_length_mm));*/
             GraphNode start(0,0);
-            //bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
-            //cout<<"path found = "<<path_found<<endl;
-            //constructPath(nodeSeq);
+            bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
+            cout<<"path found = "<<path_found<<endl;
+            cout<<"size = "<<nodeSeq.size()<<endl;
+            constructPath(nodeSeq);
         }
     }
 
