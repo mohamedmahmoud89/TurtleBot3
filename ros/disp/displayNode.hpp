@@ -260,7 +260,7 @@ public:
         path.color.a = 1.0;
         path.pose.orientation.w = 1.0;
         path.header.frame_id = "/map";
-        path.id = 1;
+        path.id = 2;
 
         featCorners.action = visualization_msgs::Marker::ADD;
         featCorners.type = visualization_msgs::Marker::POINTS;

@@ -31,16 +31,8 @@ public:
                         while(!(temp==start)&&temptemp++<100){
                             path.push_front(temp);
                             temp=m[temp];
-                            cout<<"temp.x= "<<temp.x<<endl;
-                            cout<<"temp.y= "<<temp.y<<endl;
                         }
                         path.push_front(start);
-                        /*for(auto&i:m){
-                            cout<<"key.x= "<<i.first.x<<endl;
-                            cout<<"key.y= "<<i.first.y<<endl;
-                            cout<<"val.x= "<<i.second.x<<endl;
-                            cout<<"val.y= "<<i.second.y<<endl;
-                        }*/
                         return true;
                     }
                     q.push(n);

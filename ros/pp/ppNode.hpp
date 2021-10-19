@@ -26,20 +26,22 @@ class PpNode : public RosNodeBase{
     void update() override{
         if(locDone){
             list<GraphNode> nodeSeq;
-            /*GraphNode start(
+            GraphNode start(
                 static_cast<u16>(globalPos.x_mm/PpNodeCfg::unit_maze_cell_length_mm),
-                static_cast<u16>(globalPos.y_mm/PpNodeCfg::unit_maze_cell_length_mm));*/
-            GraphNode start(0,0);
-            bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
-            cout<<"path found = "<<path_found<<endl;
-            cout<<"size = "<<nodeSeq.size()<<endl;
-            constructPath(nodeSeq);
+                static_cast<u16>(globalPos.y_mm/PpNodeCfg::unit_maze_cell_length_mm));
+            if(MazeGraph::nodes.find(start)!=MazeGraph::nodes.end()){
+                bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
+                if(!nodeSeq.empty())
+                    constructPath(nodeSeq);
+                publish();
+            }
         }
     }
 
     void constructPath(const list<GraphNode>& nodeSeq){
         vector<GraphNode>vec;
         vec.assign(nodeSeq.begin(),nodeSeq.end());
+        path.clear();
         for(u16 idx=0;idx<nodeSeq.size()-1;++idx){
             PathSeg seg;
             seg.p1.x_mm=(vec[idx].x*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
