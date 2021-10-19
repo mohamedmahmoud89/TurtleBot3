@@ -86,6 +86,7 @@ using GraphNodeList=unordered_map<GraphNode,vector<GraphNode>,hashFunc>;
 
 struct MazeGraph{
     static const GraphNodeList nodes;
+    static const GraphNode goal;
 };
 
 struct AngConversions{

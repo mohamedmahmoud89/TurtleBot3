@@ -9,3 +9,4 @@ const GraphNodeList MazeGraph::nodes={
     {{2,1},{{1,1},{2,0}}},
     {{2,0},{{2,1}}}
 };
+const GraphNode MazeGraph::goal={2,0};

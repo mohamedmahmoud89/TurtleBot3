@@ -40,7 +40,7 @@ public:
         void update(
                 vector<Point2D>& feat_corners,
                 vector<Point2D>& feat_edges);
-        RobotPos getPosMean();
+        void getPosDensityParams(RobotPos& mean,RobotPos& cov);
         const vector<RobotPos>& getParticles();
         void reset();
 private:

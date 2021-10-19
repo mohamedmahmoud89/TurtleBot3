@@ -5,70 +5,115 @@
 #include "gs.hpp"
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseArray.h>
-#include <std_msgs/Int16MultiArray.h>
-#include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 #include <vector>
+#include <iostream>
 
 using namespace std;
 
 struct PpNodeCfg{
-};
-
-enum PathSegType{
-    STRAIGHT=0,
-    RIGHT_TURN,
-    LEFT_TURN
+    static constexpr f32 unit_maze_cell_length_mm{290};
 };
 
 struct PathSeg{
-    PathSeg():p1(),p2(),type(){}
-    PathSeg(const RobotPos& arg1,const RobotPos& arg2, const PathSegType t):p1(arg1),p2(arg2),type(t){}
+    PathSeg():p1(),p2(){}
+    PathSeg(const RobotPos& arg1,const RobotPos& arg2):p1(arg1),p2(arg2){}
     RobotPos p1;
     RobotPos p2;
-    PathSegType type;
 };
 
 class PpNode : public RosNodeBase{
     void update() override{
-        list<GraphNode> nodeSeq;
-        GraphNode start,end;
-        gs.search(MazeGraph::nodes,start,end,nodeSeq);
-        constructPath(nodeSeq);
+        if(locDone){
+            list<GraphNode> nodeSeq;
+            /*GraphNode start(
+                static_cast<u16>(globalPos.x_mm/PpNodeCfg::unit_maze_cell_length_mm),
+                static_cast<u16>(globalPos.y_mm/PpNodeCfg::unit_maze_cell_length_mm));*/
+            GraphNode start(0,0);
+            //bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
+            //cout<<"path found = "<<path_found<<endl;
+            //constructPath(nodeSeq);
+        }
     }
 
     void constructPath(const list<GraphNode>& nodeSeq){
-
+        vector<GraphNode>vec;
+        vec.assign(nodeSeq.begin(),nodeSeq.end());
+        for(u16 idx=0;idx<nodeSeq.size()-1;++idx){
+            PathSeg seg;
+            seg.p1.x_mm=(vec[idx].x*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
+            seg.p1.y_mm=(vec[idx].y*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
+            seg.p2.x_mm=(vec[idx+1].x*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
+            seg.p2.y_mm=(vec[idx+1].y*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
+            if(vec[idx+1].x>vec[idx].x){
+                seg.p1.theta_rad=0;
+                seg.p2.theta_rad=0;
+            }
+            else if(vec[idx+1].x<vec[idx].x){
+                seg.p1.theta_rad=M_PI;
+                seg.p2.theta_rad=M_PI;
+            }
+            else if(vec[idx+1].y>vec[idx].y){
+                seg.p1.theta_rad=M_PI_2;
+                seg.p2.theta_rad=M_PI_2;
+            }
+            else{
+                seg.p1.theta_rad=M_PI_2+M_PI;
+                seg.p2.theta_rad=M_PI_2+M_PI;
+            }
+            path.push_back(seg);
+        }
     }
 
     void publish(){
-        /*geometry_msgs::PoseArray particlesMsg;
-        geometry_msgs::Pose2D globalPosMsg;
+        geometry_msgs::PoseArray pathMsg;
         
         // path
-        particlesMsg.poses.reserve(MclNodeCfg::particles_num);
-        for(auto& pt:pf.getParticles()){
-            geometry_msgs::Pose p;
-            p.position.x=pt.x_mm;
-            p.position.y=pt.y_mm;
-            p.orientation.z=pt.theta_rad;
-            particlesMsg.poses.push_back(p);
+        pathMsg.poses.reserve(path.size()*2);
+        for(auto& seg:path){
+            geometry_msgs::Pose p1,p2;
+            p1.position.x=seg.p1.x_mm;
+            p1.position.y=seg.p1.y_mm;
+            p1.orientation.z=seg.p1.theta_rad;
+            p2.position.x=seg.p2.x_mm;
+            p2.position.y=seg.p2.y_mm;
+            p2.orientation.z=seg.p2.theta_rad;
+            pathMsg.poses.push_back(p1);
+            pathMsg.poses.push_back(p2);
         }
-        particlesPub.publish(particlesMsg);*/
+        pathPub.publish(pathMsg);
     }
 
     static void storePos(const geometry_msgs::Pose2D& msg){
-        //Lock l(posMux);
+        Lock l(posMux);
+        globalPos.x_mm=msg.x;
+        globalPos.y_mm=msg.y;
+        globalPos.theta_rad=msg.theta;
+    }
+
+    static void storeLocStatus(const std_msgs::Bool& msg){
+        if(msg.data)
+            locDone=true;
     }
 public:
     PpNode():
         RosNodeBase("pp"),
         globalPosSub(n.subscribe("globalPos",100,storePos)),
-        pathsPub(n.advertise<geometry_msgs::PoseArray>("path", 1000)){}
+        locStatSub(n.subscribe("locStatus",100,storeLocStatus)),
+        pathPub(n.advertise<geometry_msgs::PoseArray>("path", 1000)){}
 private:
     Subscriber globalPosSub;
-    Publisher pathsPub;
+    Subscriber locStatSub;
+    Publisher pathPub;
     GraphSearch gs;
     vector<PathSeg> path;
+    static RobotPos globalPos;
+    static mutex posMux;
+    static bool locDone;
 };
+
+RobotPos PpNode::globalPos={0,0,M_PI_2};
+mutex PpNode::posMux;
+bool PpNode::locDone=false;
 
 #endif 

@@ -1,11 +1,13 @@
 #include "pf.hpp"
 #include "odom.hpp"
 #include "feat.hpp"
+#include "Eigen/Dense"
 #include <random>
 #include <algorithm>
 #include <iostream>
 
 using namespace std;
+using namespace Eigen;
 
 ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
         ctrl_motion_std(inputs.ctrl_motion_std),
@@ -79,7 +81,7 @@ void ParticleFilter::update(
     resample(imp_weights);
 }
 
-RobotPos ParticleFilter::getPosMean(){
+/*RobotPos ParticleFilter::getPosMean(){
     // density estimation using mean particle
     f64 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
 
@@ -96,6 +98,46 @@ RobotPos ParticleFilter::getPosMean(){
     mean_sin/=sz;
     mean_cos/=sz;
     return RobotPos(mean_x/sz,mean_y/sz,atan2(mean_sin,mean_cos));
+}*/
+
+void ParticleFilter::getPosDensityParams(RobotPos& mean,RobotPos& cov){
+    // density estimation using mean particle
+    f64 mean_x(0),mean_y(0),mean_cos(0),mean_sin(0);
+
+    // particles
+    for(auto& i:particles){
+        mean_x+=i.x_mm;
+        mean_y+=i.y_mm;
+        mean_cos=cos(i.theta_rad);
+        mean_sin=sin(i.theta_rad);
+    }
+
+    // mean
+    auto sz(particles.size());
+    mean_sin/=sz;
+    mean_cos/=sz;
+    mean.x_mm=mean_x/sz;
+    mean.y_mm=mean_y/sz;
+    mean.theta_rad=atan2(mean_sin,mean_cos);
+
+    // std
+    Matrix2f std_xy;
+    f32 sxx(0),sxy(0),syy(0);
+    for(auto&i:particles){
+            f32 dx(i.x_mm-mean.x_mm);
+            f32 dy(i.y_mm-mean.y_mm);
+            sxx+= pow(dx,2);
+            sxy+= dx*dy;
+            syy+= pow(dy,2);
+    }
+    sxx/=(sz-1);
+    syy/=(sz-1);
+    sxy/=(sz-1);
+    std_xy << sxx,sxy,sxy,syy;
+    SelfAdjointEigenSolver<MatrixXf> eigensolver(std_xy);
+    auto eigenvals=eigensolver.eigenvalues();
+    f32 x(sqrt(eigenvals(1)));
+    f32 y(sqrt(eigenvals(0)));
 }
 
 const vector<RobotPos>& ParticleFilter::getParticles(){

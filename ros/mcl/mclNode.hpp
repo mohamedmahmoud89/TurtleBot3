@@ -8,6 +8,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
 #include <vector>
 
 using namespace std;
@@ -57,12 +58,18 @@ class MclNode : public RosNodeBase{
     void publish(){
         geometry_msgs::PoseArray particlesMsg;
         geometry_msgs::Pose2D globalPosMsg;
-
-        RobotPos pos=pf.getPosMean();
+        std_msgs::Bool locStatMsg;
+        RobotPos pos,cov;
+        
+        pf.getPosDensityParams(pos,cov);
         globalPosMsg.x=pos.x_mm;
         globalPosMsg.y=pos.y_mm;
         globalPosMsg.theta=pos.theta_rad;
         globalPosPub.publish(globalPosMsg);
+
+        if(cov.x_mm<30&&cov.y_mm<30)
+            locStatMsg.data=true;
+        locStatPub.publish(locStatMsg);
         
         // particles
         particlesMsg.poses.reserve(MclNodeCfg::particles_num);
@@ -112,6 +119,7 @@ public:
         featEdgeSub(n.subscribe("featEdges",100,storeEdges)),
         hmiSub(n.subscribe("resetCmd",100,resetFilter)),
         globalPosPub(n.advertise<geometry_msgs::Pose2D>("globalPos", 1000)),
+        locStatPub(n.advertise<std_msgs::Bool>("locStatus", 1000)),
         particlesPub(n.advertise<geometry_msgs::PoseArray>("particles", 1000)){}
 private:
     Subscriber ctrlDataSub;
@@ -119,6 +127,7 @@ private:
     Subscriber featEdgeSub;
     Subscriber hmiSub;
     Publisher globalPosPub;
+    Publisher locStatPub;
     Publisher particlesPub;
     static ParticleFilter pf;
     static WheelVelocity vel;

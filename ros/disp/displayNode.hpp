@@ -70,6 +70,13 @@ class DisplayNode : public RosNodeBase{
         // landmarks virusalization
         landmarkPoints.header.stamp = ros::Time::now();
         rvizLandmarksPub.publish(landmarkPoints);
+
+        // path visualization
+        {
+            Lock l(pathMux);
+            path.header.stamp = ros::Time::now();
+            pathPub.publish(path);
+        }
     }
 
     static void processMclPosData(const geometry_msgs::Pose2D& msg){
@@ -110,6 +117,18 @@ class DisplayNode : public RosNodeBase{
             p.y=pt.position.y/100;
             p.z=0.2;
             featLines.points.push_back(p);
+        }
+    }
+
+    static void processPathData(const geometry_msgs::PoseArray& msg){
+        Lock l(pathMux);
+        path.points.clear();
+        path.points.reserve(msg.poses.size());
+        for(auto& pt:msg.poses){
+            geometry_msgs::Point p;
+            p.x=pt.position.x/100;
+            p.y=pt.position.y/100;
+            path.points.push_back(p);
         }
     }
 
@@ -178,6 +197,7 @@ public:
         lfxEdgeDataSub(n.subscribe("featEdges",100,processLfxEdgeData)),
         mclPosDataSub(n.subscribe("globalPos",100,processMclPosData)),
         mclParticlesDataSub(n.subscribe("particles",100,processMclParticlesData)),
+        pathDataSub(n.subscribe("path",100,processPathData)),
         rvizPointsPub(n.advertise<visualization_msgs::Marker>("rvizPoints", 1000)),
         rvizLinesPub(n.advertise<visualization_msgs::Marker>("rvizLines", 1000)),
         rvizCornersPub(n.advertise<visualization_msgs::Marker>("rvizCorners", 1000)),
@@ -185,7 +205,8 @@ public:
         rvizEdgesPub(n.advertise<visualization_msgs::Marker>("rvizEdges", 1000)),
         rvizPosPub(n.advertise<geometry_msgs::PoseStamped>("rvizPos", 1000)),
         rvizGlobalPosPub(n.advertise<geometry_msgs::PoseStamped>("rvizGlobalPos", 1000)),
-        rvizParticlesPub(n.advertise<geometry_msgs::PoseArray>("rvizParticles", 1000)){}
+        rvizParticlesPub(n.advertise<geometry_msgs::PoseArray>("rvizParticles", 1000)),
+        pathPub(n.advertise<visualization_msgs::Marker>("rvizPath", 1000)){}
 
     void init(){
         featPoints.action = visualization_msgs::Marker::ADD;
@@ -232,6 +253,15 @@ public:
         featLines.header.frame_id = "/map";
         featLines.id = 1;
 
+        path.action = visualization_msgs::Marker::ADD;
+        path.type = visualization_msgs::Marker::LINE_LIST;
+        path.scale.x = 0.07;
+        path.color.g = 1.0;
+        path.color.a = 1.0;
+        path.pose.orientation.w = 1.0;
+        path.header.frame_id = "/map";
+        path.id = 1;
+
         featCorners.action = visualization_msgs::Marker::ADD;
         featCorners.type = visualization_msgs::Marker::POINTS;
         featCorners.scale.x = 0.1;
@@ -265,6 +295,7 @@ private:
     Subscriber lfxEdgeDataSub;
     Subscriber mclPosDataSub;
     Subscriber mclParticlesDataSub;
+    Subscriber pathDataSub;
     Publisher rvizPointsPub;
     Publisher rvizLinesPub;
     Publisher rvizCornersPub;
@@ -273,6 +304,7 @@ private:
     Publisher rvizParticlesPub;
     Publisher rvizGlobalPosPub;
     Publisher rvizLandmarksPub;
+    Publisher pathPub;
     visualization_msgs::Marker landmarkPoints;
     static constexpr u16 rate_hz=10;
     static mutex posMux;
@@ -283,6 +315,7 @@ private:
     static mutex featsCornerMux;
     static mutex featsEdgeMux;
     static mutex mclParticlesMux;
+    static mutex pathMux;
     static visualization_msgs::Marker featPoints;
     static visualization_msgs::Marker featLines;
     static visualization_msgs::Marker featCorners;
@@ -290,6 +323,7 @@ private:
     static geometry_msgs::PoseStamped pos;
     static geometry_msgs::PoseStamped globalPos;
     static geometry_msgs::PoseArray particles;
+    static visualization_msgs::Marker path;
 };
 
 visualization_msgs::Marker DisplayNode::featPoints;
@@ -299,6 +333,7 @@ visualization_msgs::Marker DisplayNode::featEdges;
 geometry_msgs::PoseStamped DisplayNode::pos;
 geometry_msgs::PoseStamped DisplayNode::globalPos;
 geometry_msgs::PoseArray DisplayNode::particles;
+visualization_msgs::Marker DisplayNode::path;
 mutex DisplayNode::posMux;
 mutex DisplayNode::globalPosMux;
 mutex DisplayNode::featsMux;
@@ -306,6 +341,7 @@ mutex DisplayNode::featsLineMux;
 mutex DisplayNode::featsCornerMux;
 mutex DisplayNode::featsEdgeMux;
 mutex DisplayNode::mclParticlesMux;
+mutex DisplayNode::pathMux;
 RobotPos DisplayNode::globalRobotPos;
 
 #endif
