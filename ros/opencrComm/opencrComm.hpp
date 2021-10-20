@@ -8,8 +8,11 @@
 #include<string>
 
 using namespace std;
-
 #define FILE "/dev/ttyACM0"
+
+struct OpenCrCommNodeCfg{
+    static constexpr u16 rx_watchdog_bouncer_limit{10};
+};
 
 class OpenCrCommNode : public RosNodeBase{
     si16 parseStr(string&& s){
@@ -32,6 +35,15 @@ class OpenCrCommNode : public RosNodeBase{
         std_msgs::MultiArrayDimension dim;
         fstream fs;
         string line;
+        bool stop=false;
+
+        if(rx_watchdog_bouncer<=OpenCrCommNodeCfg::rx_watchdog_bouncer_limit){
+            rx_watchdog_bouncer++;
+        }
+        else{
+            stop=true;
+        }
+        
 
         dim.size=2;
         dim.stride=1;
@@ -40,6 +52,11 @@ class OpenCrCommNode : public RosNodeBase{
             Lock l(fileMux);
             fs.open(FILE);
             if(fs.is_open()){
+                // force stop if no commands coming
+                if(stop){
+                    fs<<"stop#"<<endl;
+                    while(getline(fs,line)&&line!="over"){}
+                }
                 fs<<"query#"<<endl;
                 while(getline(fs,line)&&line!="over"){
                     //cout<<line<<endl;
@@ -56,6 +73,7 @@ class OpenCrCommNode : public RosNodeBase{
         fstream fs;
         string line;
         Lock l(fileMux);
+        rx_watchdog_bouncer=0;
         if(msg.data==lastCmd)
             return;
         
@@ -78,9 +96,11 @@ private:
     Publisher odomDataPub;
     static mutex fileMux;
     static string lastCmd;
+    static u16 rx_watchdog_bouncer;
 };
 
 mutex OpenCrCommNode::fileMux;
 string OpenCrCommNode::lastCmd="";
+u16 OpenCrCommNode::rx_watchdog_bouncer=0;
 
 #endif
