@@ -8,6 +8,6 @@
   <node name="mcl_node" pkg="turtleBot3" type="mcl_node" /> 
   <node name="disp_node" pkg="turtleBot3" type="disp_node" /> 
   <node name="pp_node" pkg="turtleBot3" type="pp_node" /> 
-  <node name="mon_node" pkg="turtleBot3" type="mon_node" output="screen" />
-  <node name="rviz" pkg="rviz" type="rviz" args="-d /home/mohamed/catkin/src/turtleBot3/recordings/rviz_display.rviz"/>  
+  <!--node name="mon_node" pkg="turtleBot3" type="mon_node" output="screen" /-->
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d /home/mohamed/catkin/src/turtleBot3/recordings/rviz_display.rviz"/-->  
 </launch>

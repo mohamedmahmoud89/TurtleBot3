@@ -54,8 +54,8 @@ class OpenCrCommNode : public RosNodeBase{
             if(fs.is_open()){
                 // force stop if no commands coming
                 if(stop){
-                    fs<<"stop#"<<endl;
-                    while(getline(fs,line)&&line!="over"){}
+                    //fs<<"stop#"<<endl;
+                    //while(getline(fs,line)&&line!="over"){}
                 }
                 fs<<"query#"<<endl;
                 while(getline(fs,line)&&line!="over"){
