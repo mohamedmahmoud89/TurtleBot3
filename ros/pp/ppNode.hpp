@@ -6,6 +6,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseArray.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
 #include <vector>
 #include <iostream>
 
@@ -24,6 +25,7 @@ struct PathSeg{
 
 class PpNode : public RosNodeBase{
     void update() override{
+        vector<PathSeg> path;
         if(locDone){
             list<GraphNode> nodeSeq;
             GraphNode start(
@@ -32,16 +34,15 @@ class PpNode : public RosNodeBase{
             if(MazeGraph::nodes.find(start)!=MazeGraph::nodes.end()){
                 bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
                 if(!nodeSeq.empty())
-                    constructPath(nodeSeq);
-                publish();
+                    constructPath(nodeSeq,path);
             }
         }
+        publish(path);
     }
 
-    void constructPath(const list<GraphNode>& nodeSeq){
+    void constructPath(const list<GraphNode>& nodeSeq,vector<PathSeg>& path){
         vector<GraphNode>vec;
         vec.assign(nodeSeq.begin(),nodeSeq.end());
-        path.clear();
         for(u16 idx=0;idx<nodeSeq.size()-1;++idx){
             PathSeg seg;
             seg.p1.x_mm=(vec[idx].x*PpNodeCfg::unit_maze_cell_length_mm)+(PpNodeCfg::unit_maze_cell_length_mm/2);
@@ -68,7 +69,7 @@ class PpNode : public RosNodeBase{
         }
     }
 
-    void publish(){
+    void publish(const vector<PathSeg>& path){
         geometry_msgs::PoseArray pathMsg;
         
         // path
@@ -95,8 +96,7 @@ class PpNode : public RosNodeBase{
     }
 
     static void storeLocStatus(const std_msgs::Bool& msg){
-        if(msg.data)
-            locDone=true;
+        locDone=msg.data;
     }
 public:
     PpNode():
@@ -109,7 +109,6 @@ private:
     Subscriber locStatSub;
     Publisher pathPub;
     GraphSearch gs;
-    vector<PathSeg> path;
     static RobotPos globalPos;
     static mutex posMux;
     static bool locDone;

@@ -17,8 +17,8 @@ public:
         unordered_map<GraphNode,GraphNode,hashFunc>m;
         unordered_set<GraphNode,hashFunc>visited;
         q.push(start);
-        u16 temptemp=0;
-        while(!q.empty()&&temptemp++<100){
+        u16 search_limit=0;
+        while(!q.empty()&&search_limit++<100){
             GraphNode curr=q.front();
             visited.insert(curr);
             q.pop();
@@ -28,7 +28,7 @@ public:
                     m[n]=curr;
                     if(n==goal){
                         GraphNode temp=goal;
-                        while(!(temp==start)&&temptemp++<100){
+                        while(!(temp==start)){
                             path.push_front(temp);
                             temp=m[temp];
                         }

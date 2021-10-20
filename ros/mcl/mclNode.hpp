@@ -21,6 +21,7 @@ struct MclNodeCfg{
     static constexpr u16 particles_num{5000};
     static constexpr u16 world_x_mm{880};
     static constexpr u16 world_y_mm{580};
+    static constexpr u16 min_cov_x_y_loc_done{30};
 };
 
 class MclNode : public RosNodeBase{
@@ -28,6 +29,8 @@ class MclNode : public RosNodeBase{
         WheelVelocity vel_copy(0,0);
         vector<Point2D>corners_copy;
         vector<Point2D>edges_copy;
+        RobotPos pos,cov;
+
         {
             Lock l(velMux);
             vel_copy=vel;
@@ -52,24 +55,23 @@ class MclNode : public RosNodeBase{
         if((vel_copy.left_rpm&&vel_copy.right_rpm)&&(corners_copy.size()+edges_copy.size()>=2)){
             pf.update(corners_copy,edges_copy);
         }
-        publish();
+        pf.getPosDensityParams(pos,cov);
+        if(cov.x_mm<MclNodeCfg::min_cov_x_y_loc_done&&cov.y_mm<MclNodeCfg::min_cov_x_y_loc_done)
+            loc_done=true;
+        publish(pos,cov);
     }
 
-    void publish(){
+    void publish(const RobotPos& pos,const RobotPos& cov){
         geometry_msgs::PoseArray particlesMsg;
         geometry_msgs::Pose2D globalPosMsg;
         std_msgs::Bool locStatMsg;
-        RobotPos pos,cov;
         
-        pf.getPosDensityParams(pos,cov);
         globalPosMsg.x=pos.x_mm;
         globalPosMsg.y=pos.y_mm;
         globalPosMsg.theta=pos.theta_rad;
         globalPosPub.publish(globalPosMsg);
 
-        if(cov.x_mm<30&&cov.y_mm<30)
-            locStatMsg.data=true;
-        
+        locStatMsg.data=loc_done;
         locStatPub.publish(locStatMsg);
         
         // particles
@@ -109,8 +111,10 @@ class MclNode : public RosNodeBase{
     }
 
     static void resetFilter(const std_msgs::String& msg){
-        if(msg.data=="reset")
+        if(msg.data=="reset"){
             reset_filter=true;
+            loc_done=false;
+        }
     }
 public:
     MclNode():
@@ -138,6 +142,7 @@ private:
     static mutex cornersMux;
     static mutex edgesMux;
     static bool reset_filter;
+    static bool loc_done;
 };
 
 WheelVelocity MclNode::vel(0,0);
@@ -156,4 +161,5 @@ ParticleFilter MclNode::pf(
                 MclNodeCfg::world_x_mm,
                 MclNodeCfg::world_y_mm));
 bool MclNode::reset_filter=false;
+bool MclNode::loc_done=false;
 #endif 
