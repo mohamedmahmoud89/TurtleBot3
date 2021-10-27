@@ -40,11 +40,11 @@ class OpenCrCommNode : public RosNodeBase{
         if(rx_watchdog_bouncer<=OpenCrCommNodeCfg::rx_watchdog_bouncer_limit){
             rx_watchdog_bouncer++;
         }
-        else{
+        else if(!stopped){
             stop=true;
+            stopped=true;
         }
         
-
         dim.size=2;
         dim.stride=1;
         msg.layout.dim.push_back(dim);
@@ -54,35 +54,42 @@ class OpenCrCommNode : public RosNodeBase{
             if(fs.is_open()){
                 // force stop if no commands coming
                 if(stop){
-                    //fs<<"stop#"<<endl;
-                    //while(getline(fs,line)&&line!="over"){}
+                    lastCmd="stop";
+                    fs<<"stop#"<<endl;
+                    while(getline(fs,line)&&line!="over"){}
                 }
-                fs<<"query#"<<endl;
-                while(getline(fs,line)&&line!="over"){
-                    //cout<<line<<endl;
-                    if(line.size()){
-                        msg.data.push_back(parseStr(line.substr(2,line.size()-2)));
+                else{
+                    fs<<"query#"<<endl;
+                    while(getline(fs,line)&&line!="over"){
+                        //cout<<line<<endl;
+                        if(line.size()){
+                            msg.data.push_back(parseStr(line.substr(2,line.size()-2)));
+                        }
                     }
                 }
                 fs.close();
             }
         }
-        odomDataPub.publish(msg);
+
+        if(msg.data.size()==2)
+            odomDataPub.publish(msg);
     }
     static void sendData(const std_msgs::String& msg){
         fstream fs;
         string line;
         Lock l(fileMux);
         rx_watchdog_bouncer=0;
-        if(msg.data==lastCmd)
+        stopped=false;
+            
+        if(msg.data.empty()||lastCmd==msg.data)
             return;
-        
+       	
         fs.open(FILE);
         if(fs.is_open()){
-                fs<<msg.data<<'#'<<endl;
-                while(getline(fs,line)&&line!="over"){}
-                fs.close();
-                lastCmd=msg.data;
+            fs<<msg.data<<'#'<<endl;
+            while(getline(fs,line)&&line!="over"){}
+            fs.close();
+            lastCmd=msg.data;
         }
     }
 public:
@@ -96,11 +103,12 @@ private:
     Publisher odomDataPub;
     static mutex fileMux;
     static string lastCmd;
+    static bool stopped;
     static u16 rx_watchdog_bouncer;
 };
 
 mutex OpenCrCommNode::fileMux;
 string OpenCrCommNode::lastCmd="";
 u16 OpenCrCommNode::rx_watchdog_bouncer=0;
-
+bool OpenCrCommNode::stopped=false;
 #endif
