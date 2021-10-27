@@ -199,9 +199,9 @@ class CtrlNode : public RosNodeBase{
             default:
             break;
         };
-        cout<<"segNum = "<<segNum<<endl;
+        /*cout<<"segNum = "<<segNum<<endl;
         cout<<"segLoc = "<<segLoc<<endl;
-        cout<<"seg cmd = "<<ret<<endl;
+        cout<<"seg cmd = "<<ret<<endl;*/
 
         return ret;
     }

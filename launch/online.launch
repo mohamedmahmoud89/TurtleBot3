@@ -3,12 +3,11 @@
   <node machine="pi" name="opencr_node" pkg="turtleBot3" type="opencr_node"/>
   <node machine="pi" name="lds_node" pkg="turtleBot3" type="lds_node"/>
   <node name="hmi_node" pkg="turtleBot3" type="hmi_node" output="screen" launch-prefix="gnome-terminal --command"/>
-  <!--node name="gateway_node" pkg="turtleBot3" type="gateway_node" /-->
-  <node name="ctrl_node" pkg="turtleBot3" type="ctrl_node" output="screen"/>
+  <node name="ctrl_node" pkg="turtleBot3" type="ctrl_node" />
   <node name="lfx_node" pkg="turtleBot3" type="lfx_node"/>
   <node name="mcl_node" pkg="turtleBot3" type="mcl_node" /> 
   <node name="disp_node" pkg="turtleBot3" type="disp_node" /> 
   <node name="pp_node" pkg="turtleBot3" type="pp_node" /> 
-  <!--node name="mon_node" pkg="turtleBot3" type="mon_node" output="screen" /-->
+  <node name="mon_node" pkg="turtleBot3" type="mon_node" output="screen" />
   <node name="rviz" pkg="rviz" type="rviz" args="-d /home/mohamed/catkin/src/turtleBot3/recordings/rviz_display.rviz"/>  
 </launch>
