@@ -195,9 +195,9 @@ void ParticleFilter::resample(const vector<f32>& weights){
         // sample new particles around the one of chosen index
         random_device rd;
         default_random_engine gen(rd());
-        normal_distribution<f32> dist_x(particles[idx].x_mm,20.0);
-        normal_distribution<f32> dist_y(particles[idx].y_mm,20.0);
-        normal_distribution<f32> dist_yaw(particles[idx].theta_rad,2*AngConversions::degToRad);
+        normal_distribution<f32> dist_x(particles[idx].x_mm,5.0);
+        normal_distribution<f32> dist_y(particles[idx].y_mm,5.0);
+        normal_distribution<f32> dist_yaw(particles[idx].theta_rad,1*AngConversions::degToRad);
         f32 x(dist_x(gen));
         f32 y(dist_y(gen));
         f32 yaw(dist_yaw(gen));

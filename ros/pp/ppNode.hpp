@@ -16,17 +16,10 @@ struct PpNodeCfg{
     static constexpr f32 unit_maze_cell_length_mm{290};
 };
 
-struct PathSeg{
-    PathSeg():p1(),p2(){}
-    PathSeg(const RobotPos& arg1,const RobotPos& arg2):p1(arg1),p2(arg2){}
-    RobotPos p1;
-    RobotPos p2;
-};
-
 class PpNode : public RosNodeBase{
     void update() override{
-        vector<PathSeg> path;
-        if(locDone){
+        if(locDone&&!pathPlanned){
+            path.clear();
             list<GraphNode> nodeSeq;
             GraphNode start(
                 static_cast<u16>(globalPos.x_mm/PpNodeCfg::unit_maze_cell_length_mm),
@@ -35,6 +28,7 @@ class PpNode : public RosNodeBase{
                 bool path_found = gs.search(MazeGraph::nodes,start,MazeGraph::goal,nodeSeq);
                 if(!nodeSeq.empty())
                     constructPath(nodeSeq,path);
+                    pathPlanned=true;
             }
         }
         publish(path);
@@ -97,6 +91,10 @@ class PpNode : public RosNodeBase{
 
     static void storeLocStatus(const std_msgs::Bool& msg){
         locDone=msg.data;
+        if(!locDone){
+            pathPlanned=false;
+            path.clear();
+        }
     }
 public:
     PpNode():
@@ -109,13 +107,17 @@ private:
     Subscriber locStatSub;
     Publisher pathPub;
     GraphSearch gs;
+    static vector<PathSeg> path;
     static RobotPos globalPos;
     static mutex posMux;
     static bool locDone;
+    static bool pathPlanned;
 };
 
 RobotPos PpNode::globalPos={0,0,M_PI_2};
 mutex PpNode::posMux;
 bool PpNode::locDone=false;
+bool PpNode::pathPlanned=false;
+vector<PathSeg> PpNode::path;
 
 #endif 

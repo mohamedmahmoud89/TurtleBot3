@@ -124,13 +124,19 @@ struct Line2DPolar{
     f32 end_ang_rad{0};
 };
 
-
 struct LfxFeats{
     vector<Point2D> points;
     vector<Line2D> lines;
     vector<Line2DPolar> lines_polar;
     vector<Point2D> corners;
     vector<Point2D> edges;
+};
+
+struct PathSeg{
+    PathSeg():p1(),p2(){}
+    PathSeg(const RobotPos& arg1,const RobotPos& arg2):p1(arg1),p2(arg2){}
+    RobotPos p1;
+    RobotPos p2;
 };
 
 class Lock{

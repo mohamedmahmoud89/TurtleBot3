@@ -1,11 +1,10 @@
-#include "displayNode.hpp"
+#include "ctrlNode.hpp"
 
 int main(int argc,char** argv)
 {
 	ros::init(argc,argv,"CtrlNode");
 	
-	DisplayNode node;
-	node.init();
+	CtrlNode node;
     node.run();
 
 	return 0;

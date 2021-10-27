@@ -7,13 +7,13 @@
 using namespace std;
 
 enum Nodes{
-    HMI=0,
-    OPENCR,
+    OPENCR=0,
     LDS,
     LFX,
     DISP,
     MCL,
     PP,
+    CTRL,
     NUM_NODES
 };
 
@@ -50,9 +50,9 @@ class MonitorNode : public RosNodeBase{
         Lock l(lock);
         latest_rt[DISP].rt=msg.data;
     }
-    static void processHmiData(const std_msgs::Float64& msg){
+    static void processCtrlData(const std_msgs::Float64& msg){
         Lock l(lock);
-        latest_rt[HMI].rt=msg.data;
+        latest_rt[CTRL].rt=msg.data;
     }
     static void processMclData(const std_msgs::Float64& msg){
         Lock l(lock);
@@ -65,7 +65,7 @@ public:
         opencrDataSub(n.subscribe("rt_openCR",100,processOpencrData)),
         ldsDataSub(n.subscribe("rt_lds",100,processLdsData)),
         lfxDataSub(n.subscribe("rt_lfx",100,processLfxData)),
-        hmiDataSub(n.subscribe("rt_hmiGateway",100,processHmiData)),
+        ctrlDataSub(n.subscribe("rt_ctrl",100,processCtrlData)),
         mclDataSub(n.subscribe("rt_mcl",100,processMclData)),
         dispDataSub(n.subscribe("rt_display",100,processDispData)){}
 
@@ -75,14 +75,14 @@ private:
     Subscriber opencrDataSub;
     Subscriber ldsDataSub;
     Subscriber lfxDataSub;
-    Subscriber hmiDataSub;
+    Subscriber ctrlDataSub;
     Subscriber mclDataSub;
     Subscriber dispDataSub;
     static constexpr u16 rate_hz=10;
     static mutex lock;
 };
 
-rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"hmi"},{0,"opencr"},{0,"lds"},{0,"lfx"},{0,"disp"},{0,"mcl"},{0,"pp"}};
+rtElement MonitorNode::latest_rt[NUM_NODES]={{0,"opencr"},{0,"lds"},{0,"lfx"},{0,"disp"},{0,"mcl"},{0,"pp"},{0,"ctrl"}};
 mutex MonitorNode::lock;
 
 #endif

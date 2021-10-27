@@ -52,7 +52,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(hmi_node ros/hmi/hmiMain.cpp)
-add_executable(gateway_node ros/hmi/gatewayMain.cpp)
+add_executable(ctrl_node ros/ctrl/ctrlMain.cpp)
 add_executable(opencr_node ros/opencrComm/opencrCommMain.cpp)
 add_executable(odom_node ros/odom/odomMain.cpp)
 add_executable(lds_node ros/ldsd/ldsMain.cpp ros/ldsd/ldsDriver.cpp)
@@ -67,10 +67,6 @@ add_executable(pp_node ros/pp/ppMain.cpp core/common/common.cpp)
    hmi_node
    ${catkin_LIBRARIES}
  )
- target_link_libraries(
-  gateway_node
-  ${catkin_LIBRARIES}
-)
   target_link_libraries(
    opencr_node
    ${catkin_LIBRARIES}
@@ -103,3 +99,7 @@ add_executable(pp_node ros/pp/ppMain.cpp core/common/common.cpp)
    pp_node
    ${catkin_LIBRARIES}
  )
+ target_link_libraries(
+  ctrl_node
+  ${catkin_LIBRARIES}
+)

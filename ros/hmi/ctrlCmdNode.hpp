@@ -25,6 +25,8 @@ class CtrlCmdNode : public RosNodeBase{
         if(cmd=="6")msg.data="right";
         if(cmd=="+")msg.data="up";
         if(cmd=="-")msg.data="down";
+        if(cmd=="s")msg.data="start";
+        if(cmd=="a")msg.data="abort";
         if(cmd=="r")reset_msg.data="reset";
 
         if(msg.data.size()){
