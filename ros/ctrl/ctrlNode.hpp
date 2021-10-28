@@ -24,7 +24,7 @@ enum SegRelPosState{
 
 struct CtrlNodeCfg{
     static constexpr f32 threshold_x_mm{10};
-    static constexpr f32 threshold_y_mm{20};
+    static constexpr f32 threshold_y_mm{40};
     static constexpr f32 threshold_ang_deg{2};
 };
 
