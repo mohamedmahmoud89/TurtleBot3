@@ -98,11 +98,21 @@ class DisplayNode : public RosNodeBase{
         Lock l(featsMux);
         featPoints.points.clear();
         featPoints.points.reserve(msg.poses.size());
+        RobotPos gpos;
+        {
+            Lock l2(globalPosMux);
+            gpos = globalRobotPos;
+        }
+
         for(auto& pt:msg.poses){
             geometry_msgs::Point p;
-            p.x=pt.position.x/100;
-            p.y=pt.position.y/100;
+            p.x=pt.position.x;
+            p.y=pt.position.y;
             p.z=0.2;
+            Point2D temp(p.x,p.y);
+            Point2D ret=calcFeatGlobalPos(temp,gpos);
+            p.x=ret.x_mm/100;
+            p.y=ret.y_mm/100;
             featPoints.points.push_back(p);
         }
     }
@@ -111,11 +121,21 @@ class DisplayNode : public RosNodeBase{
         Lock l(featsLineMux);
         featLines.points.clear();
         featLines.points.reserve(msg.poses.size());
+        RobotPos gpos;
+        {
+            Lock l2(globalPosMux);
+            gpos = globalRobotPos;
+        }
+
         for(auto& pt:msg.poses){
             geometry_msgs::Point p;
-            p.x=pt.position.x/100;
-            p.y=pt.position.y/100;
+            p.x=pt.position.x;
+            p.y=pt.position.y;
             p.z=0.2;
+            Point2D temp(p.x,p.y);
+            Point2D ret=calcFeatGlobalPos(temp,gpos);
+            p.x=ret.x_mm/100;
+            p.y=ret.y_mm/100;
             featLines.points.push_back(p);
         }
     }

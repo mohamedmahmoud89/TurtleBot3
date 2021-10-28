@@ -64,6 +64,11 @@ struct Landmarks{
     static const vector<Point2D>edges;
 };
 
+struct MazeDim{
+    static const u16 world_x_mm;
+    static const u16 world_y_mm;
+};
+
 struct GraphNode{
     GraphNode():x(0),y(0){}
     GraphNode(const u16 arg1,const u16 arg2):x(arg1),y(arg2){}

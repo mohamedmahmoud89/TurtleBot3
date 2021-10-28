@@ -23,7 +23,7 @@ enum SegRelPosState{
 };
 
 struct CtrlNodeCfg{
-    static constexpr f32 threshold_x_mm{200};
+    static constexpr f32 threshold_x_mm{10};
     static constexpr f32 threshold_y_mm{20};
     static constexpr f32 threshold_ang_deg{2};
 };
@@ -57,9 +57,8 @@ class CtrlNode : public RosNodeBase{
     bool isGoalReached(const RobotPos& goal,const RobotPos& pos){
         bool ret=false;
         if(
-            fabs(pos.x_mm-goal.x_mm)<=CtrlNodeCfg::threshold_x_mm&&
             fabs(pos.y_mm-goal.y_mm)<=CtrlNodeCfg::threshold_y_mm&&
-            fmod(pos.theta_rad-goal.theta_rad+(2*M_PI),2*M_PI)<=CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad
+            fmod(pos.theta_rad-goal.theta_rad+(2*M_PI),2*M_PI)<=2*CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad
         )
             ret=true;
         return ret;
@@ -121,7 +120,7 @@ class CtrlNode : public RosNodeBase{
                     f32 dist=dist_pt_pt*sin(theta);
 
                     // within angle and x thresholds --> stop
-                    if(/*fabs(dist)<CtrlNodeCfg::threshold_x_mm&&*/fabs(theta)<CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad){
+                    if(/*fabs(dist)<CtrlNodeCfg::threshold_x_mm&&*/theta<CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad){
                         ret="stop";
                         segLoc=MID;
                     }
@@ -157,17 +156,31 @@ class CtrlNode : public RosNodeBase{
                     f32 dist_pt_pt=sqrt(pow(path[segNum].p2.x_mm-pos.x_mm,2)+pow(path[segNum].p2.y_mm-pos.y_mm,2));
                     f32 theta=atan2(path[segNum].p2.y_mm-pos.y_mm,path[segNum].p2.x_mm-pos.x_mm)-path[segNum].p2.theta_rad+M_PI_2;
                     f32 dist=dist_pt_pt*sin(theta);
+                    f32 dist_norm=dist_pt_pt*cos(theta);
                     /*cout<<"p2= "<<path[segNum].p2.x_mm<<" , "<<path[segNum].p2.y_mm<<" , "<<path[segNum].p2.theta_rad*AngConversions::radToDegree<<endl;
                     cout<<"pos= "<<pos.x_mm<<" , "<<pos.y_mm<<" , "<<pos.theta_rad*AngConversions::radToDegree<<endl;
                     cout<<"dist_pt_pt= "<<dist_pt_pt<<endl;
                     cout<<"theta= "<<theta<<endl;
                     cout<<"dist= "<<dist<<endl;*/
-                    if(dist<CtrlNodeCfg::threshold_y_mm/2){
+                    if(dist<CtrlNodeCfg::threshold_y_mm){
                         ret="stop";
                         segLoc=END;
                     }
                     else{
-                        ret="fwd";
+                        theta=pos.theta_rad-path[segNum].p2.theta_rad;
+                        theta=fmod(theta+(2*M_PI),2*M_PI);
+
+                        // out of normal threshold and looking left --> right
+                        if(dist_norm>CtrlNodeCfg::threshold_x_mm&&theta>CtrlNodeCfg::threshold_ang_deg&&theta<M_PI){
+                            ret="right_ctrl";
+                        }
+                        // out of normal threshold and looking right --> left
+                        else if(dist_norm>CtrlNodeCfg::threshold_x_mm&&theta>CtrlNodeCfg::threshold_ang_deg){
+                            ret="left_ctrl";
+                        }
+                        else{
+                            ret="fwd";
+                        }
                     }
                 }
                 break;
@@ -178,8 +191,8 @@ class CtrlNode : public RosNodeBase{
                     theta=fmod(theta+(2*M_PI),2*M_PI);
                     f32 dist=dist_pt_pt*sin(theta);
 
-                    // within angle thresholds --> stop
-                    if(theta<CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad){
+                    // within relaxed angle thresholds --> stop
+                    if(theta<=2*CtrlNodeCfg::threshold_ang_deg*AngConversions::degToRad){
                         ret="stop";
                         if(segNum<path.size()-1){
                             segLoc=START;

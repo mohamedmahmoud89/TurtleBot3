@@ -19,8 +19,6 @@ struct MclNodeCfg{
     static constexpr f32 meas_x_std{50};
     static constexpr f32 meas_y_std{50};
     static constexpr u16 particles_num{5000};
-    static constexpr u16 world_x_mm{880};
-    static constexpr u16 world_y_mm{580};
     static constexpr u16 min_cov_x_y_loc_done{30};
 };
 
@@ -158,8 +156,8 @@ ParticleFilter MclNode::pf(
                 MclNodeCfg::meas_x_std,
                 MclNodeCfg::meas_y_std,
                 MclNodeCfg::particles_num,
-                MclNodeCfg::world_x_mm,
-                MclNodeCfg::world_y_mm));
+                MazeDim::world_x_mm,
+                MazeDim::world_y_mm));
 bool MclNode::reset_filter=false;
 bool MclNode::loc_done=false;
 #endif 

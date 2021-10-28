@@ -25,34 +25,10 @@ ParticleFilter::ParticleFilter(const ParticleFilterInitList inputs):
 void ParticleFilter::reset(){
     particles.clear();
     particles.reserve(particles_num);
-    for(u16 i=0;i<particles_num/5;++i){
+    for(u16 i=0;i<particles_num;++i){
         particles.push_back(RobotPos(
-            RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
-            RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-            (rand() % 360)*AngConversions::degToRad));
-    }
-    for(u16 i=0;i<particles_num/5;++i){
-        particles.push_back(RobotPos(
-            RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
-            (world_y_boundary_mm/2)+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-            (rand() % 360)*AngConversions::degToRad));
-    }
-    for(u16 i=0;i<particles_num/5;++i){
-        particles.push_back(RobotPos(
-            (world_x_boundary_mm/3)+rand() % (world_x_boundary_mm/3),
-            (world_y_boundary_mm/2)+RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm),
-            (rand() % 360)*AngConversions::degToRad));
-    }
-    for(u16 i=0;i<particles_num/5;++i){
-        particles.push_back(RobotPos(
-            (world_x_boundary_mm*2/3)+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm/2),
-            world_y_boundary_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
-            (rand() % 360)*AngConversions::degToRad));
-    }
-    for(u16 i=0;i<particles_num/5;++i){
-        particles.push_back(RobotPos(
-            (world_x_boundary_mm*2/3)+RobotCfg::width_mm/2+rand() % (world_x_boundary_mm/3-RobotCfg::width_mm),
-            RobotCfg::width_mm/2+rand() % (world_y_boundary_mm/2-RobotCfg::width_mm/2),
+            RobotCfg::width_mm/2+rand() % (world_x_boundary_mm-RobotCfg::width_mm),
+            RobotCfg::width_mm/2+rand() % (world_y_boundary_mm-RobotCfg::width_mm),
             (rand() % 360)*AngConversions::degToRad));
     }
 }
@@ -100,6 +76,7 @@ void ParticleFilter::getPosDensityParams(RobotPos& mean,RobotPos& cov){
     mean.x_mm=mean_x/sz;
     mean.y_mm=mean_y/sz;
     mean.theta_rad=atan2(mean_sin,mean_cos);
+    mean.theta_rad=fmod(mean.theta_rad+(2*M_PI),2*M_PI);
 
     // std
     Matrix2f std_xy;
